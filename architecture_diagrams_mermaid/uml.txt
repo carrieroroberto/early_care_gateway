@@ -1,0 +1,77 @@
+%% Diagramma delle Classi in Mermaid
+classDiagram
+    %% --- Interfacce ---
+    class IHandler {
+        + set_next(handler: IHandler): IHandler
+        + handle(data: dict): dict
+    }
+    
+    class ISubject {
+        + attach(obs: IObserver)
+        + detach(obs: IObserver)
+        + notify(message: str)
+    }
+    
+    class IObserver {
+        + update(message: str)
+    }
+    
+    class ITriageStrategy {
+        + execute(data: dict): dict
+    }
+
+    %% --- Facade ---
+    class GatewayFacade {
+        + process_data(clinical_data: dict): dict
+    }
+
+    %% --- Observer ---
+    class LoggingMonitor {
+        + update(message: str)
+    }
+
+    %% --- Chain of Responsibility ---
+    class BaseHandler {
+        - _next_handler: IHandler
+        - _observers: list<IObserver>
+        + set_next(handler: IHandler): IHandler
+        + handle(data: dict): dict
+        + attach(obs: IObserver)
+        + detach(obs: IObserver)
+        + notify(message: str)
+    }
+
+    %% --- Handler Concreti ---
+    class ValidatorHandler {
+        + handle(data: dict): dict
+    }
+    
+    class AnonymizerHandler {
+        + handle(data: dict): dict
+    }
+    
+    class TriageEngineHandler {
+        + handle(data: dict): dict
+    }
+
+    %% --- Strategy ---
+    class SimpleRuleStrategy {
+        + execute(data: dict): dict
+    }
+    
+    class FakeAIStrategy {
+        + execute(data: dict): dict
+    }
+
+    %% --- Relazioni ---
+    GatewayFacade --> IHandler : "builds & uses"
+    LoggingMonitor --> IObserver : implements
+    BaseHandler --> IHandler : implements
+    BaseHandler --> ISubject : implements
+    BaseHandler --> IObserver : "_observers"
+    ValidatorHandler --> BaseHandler : extends
+    AnonymizerHandler --> BaseHandler : extends
+    TriageEngineHandler --> BaseHandler : extends
+    TriageEngineHandler --> ITriageStrategy : "_strategy"
+    SimpleRuleStrategy --> ITriageStrategy : implements
+    FakeAIStrategy --> ITriageStrategy : implements

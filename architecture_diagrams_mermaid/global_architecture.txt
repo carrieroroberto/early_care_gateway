@@ -1,0 +1,36 @@
+%% Diagramma di Architettura (Mermaid)
+graph TD
+    subgraph "Client"
+        U[User / External System]
+    end
+
+    subgraph "Il Vostro Sistema (API)"
+        API["Web API / FastAPI<br/>Endpoint /process"]
+        F[GatewayFacade]
+        API --> F
+    end
+
+    subgraph "Gateway Core (Il Vostro Progetto)"
+        F --> H1[Handler 1: Validator]
+        H1 --> H2[Handler 2: Anonymizer]
+        H2 --> H3[Handler 3: TriageEngine]
+        H3 --> S[ITriageStrategy]
+        H3 --- S1[SimpleRuleStrategy]
+        H3 --- S2[FakeAIStrategy]
+    end
+    
+    subgraph "Servizi Trasversali"
+        M["MonitoringService (Observer)"]
+    end
+
+    %% Connessioni Observer
+    H1 -.-> M
+    H2 -.-> M
+    H3 -.-> M
+
+    %% Stile nodi
+    style F fill:#f9f,stroke:#333,stroke-width:2px
+    style S fill:#ff9,stroke:#333,stroke-width:2px
+    style S1 fill:#fcf,stroke:#333,stroke-width:2px
+    style S2 fill:#fcf,stroke:#333,stroke-width:2px
+    style M fill:#9ff,stroke:#333,stroke-width:2px

@@ -1,0 +1,62 @@
+%% Diagramma di Sequenza in Mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+
+    participant API as "api: FastAPI"
+    participant Facade as "facade: GatewayFacade"
+    participant H1 as "h1: ValidatorHandler"
+    participant H2 as "h2: AnonymizerHandler"
+    participant H3 as "h3: TriageEngineHandler"
+    participant Strategy as "strategy: FakeAIStrategy"
+    participant Monitor as "monitor: LoggingMonitor"
+
+    %% Chiamata iniziale
+    Client->>API: POST /process (data)
+    activate API
+
+    API->>Facade: process_data(data)
+    activate Facade
+    Note right of Facade: Costruisce la catena H1->H2->H3\nAttacca LoggingMonitor come observer
+
+    %% Validator
+    Facade->>H1: handle(data)
+    activate H1
+    H1->>H1: Esegue validazione
+    H1->>Monitor: update("Validato OK")
+    activate Monitor
+    deactivate Monitor
+    H1->>H2: handle(data)
+    deactivate H1
+    activate H2
+
+    %% Anonymizer
+    H2->>H2: Esegue anonimizzazione
+    H2->>Monitor: update("Anonimizzato OK")
+    activate Monitor
+    deactivate Monitor
+    H2->>H3: handle(data)
+    deactivate H2
+    activate H3
+
+    %% TriageEngine con Strategy
+    Note right of H3: Delega calcolo triage allo Strategy
+    H3->>Strategy: execute(data)
+    activate Strategy
+    Strategy-->>H3: {"level":"ALERT"}
+    deactivate Strategy
+    H3->>H3: Aggiunge 'triage' ai dati
+    H3->>Monitor: update("Triage Eseguito")
+    activate Monitor
+    deactivate Monitor
+
+    %% Risposte
+    H3-->>H2: data
+    deactivate H3
+    H2-->>H1: data
+    H1-->>Facade: data_processed
+    Facade-->>API: data_processed
+    deactivate Facade
+
+    API-->>Client: 200 OK (data_processed)
+    deactivate API
