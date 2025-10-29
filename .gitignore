@@ -1,1 +1,49 @@
+# Group's files
 group_ideas.docx
+
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test
+.cache
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Environment variables
+.env
+.env.*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# FastAPI
+*.db
+*.sqlite
+__pydantic_cache__/
