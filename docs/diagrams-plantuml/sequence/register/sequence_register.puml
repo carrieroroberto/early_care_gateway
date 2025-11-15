@@ -1,0 +1,29 @@
+@startuml
+
+actor Doctor
+participant "UI" as UI
+participant "Gateway" as Gateway
+participant "Authentication" as AuthService
+participant "Audit" as AuditService
+database "Doctors DB" as SQLDB
+database "Audit DB" as AuditDB
+
+Doctor -> UI : Insert email, password
+UI -> Gateway : Send email, password
+Gateway -> AuthService : Manage new doctor creation
+AuthService -> SQLDB : Query email
+
+alt Email not exists
+    AuthService -> SQLDB : Write new doctor
+    AuthService -> AuditService : Log creation event
+    AuditService -> AuditDB : Write event log
+    AuthService --> Gateway : Return success
+    Gateway --> UI : Send success message
+else Email already exists
+    AuthService --> Gateway : Return error
+    Gateway --> UI : Send error message
+end
+
+UI --> Doctor : Show success/errore message
+
+@enduml

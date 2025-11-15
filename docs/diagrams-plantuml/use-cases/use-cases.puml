@@ -1,0 +1,38 @@
+@startuml
+left to right direction
+
+actor "Doctor" as Doctor
+actor "Email Service" as EmailService
+
+package "EarlyCare Gateway" {
+    usecase "Doctor registration\n(POST /register)" as UC_Register
+    usecase "Doctor login\n(POST /login)" as UC_Login
+    usecase "Request diagnosis\n(POST /analyse)" as UC_Analyse
+    usecase "View reports\n(GET /reports)" as UC_ViewReports
+    usecase "Doctor password reset\n(POST /reset-password, /new-password)" as UC_ResetPassword
+
+    usecase "JWT validation" as UC_ValidateJWT
+    usecase "Log events" as UC_Logging
+    usecase "Deep AI analysis" as UC_AI_Multi
+    usecase "Fast AI Analysis" as UC_AI_Classic
+}
+
+Doctor --> UC_Register
+Doctor --> UC_Login
+Doctor --> UC_Analyse
+Doctor --> UC_ViewReports
+Doctor --> UC_ResetPassword
+UC_ResetPassword --> EmailService
+
+UC_Analyse --> UC_ValidateJWT : <<include>>
+UC_ViewReports --> UC_ValidateJWT : <<include>>
+UC_Register --> UC_Logging : <<include>>
+UC_Login --> UC_Logging : <<include>>
+UC_Analyse --> UC_Logging : <<include>>
+UC_ViewReports --> UC_Logging : <<include>>
+UC_ResetPassword --> UC_Logging : <<include>>
+
+UC_Analyse --> UC_AI_Multi : <<extend>>
+UC_Analyse --> UC_AI_Classic : <<extend>>
+
+@enduml
