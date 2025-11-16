@@ -1,8 +1,6 @@
 from pydantic import BaseSettings
 
 class AuthSettings(BaseSettings):
-    jwt_secret: str
-    jwt_expires_minutes: int
     db_url: str
 
     class Config:
