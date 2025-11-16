@@ -1,0 +1,186 @@
+@startuml
+
+interface IAuthenticationClient {
+  + register(data: RegisterRequest)
+  + login(data: LoginRequest) : TokenResponse
+  + validateToken(token: String) : String
+  + requestPasswordReset(data: ForgotPasswordRequest)
+  + resetPassword(data: ResetPasswordRequest)
+}
+
+interface IDataProcessingClient {
+  + processData(data: AnalyseRequest) : String
+}
+
+interface IExplainableAIClient {
+  + performAnalysis(dataId: String, mode: String) : DiagnosisReport
+  + getReports(doctorId: String, patientId: String) : List<ReportSummary>
+}
+
+interface IAuditNotifier {
+  + notify(eventType: String, details: Map)
+}
+
+interface IProcessedDataClient {
+  + getProcessedData(dataId: String) : ProcessedData
+}
+
+class GatewayFacade {
+  - authClient: IAuthenticationClient
+  - dpClient: IDataProcessingClient
+  - xaiClient: IExplainableAIClient
+
+  + handleRegister(data: RegisterRequest)
+  + handleLogin(data: LoginRequest)
+  + handleAnalysis(data: AnalyseRequest, token: String, mode: String)
+  + handleGetReports(token: String, patientId: String)
+  + handleForgotPassword(data: ForgotPasswordRequest)
+  + handleResetPassword(data: ResetPasswordRequest)
+}
+
+GatewayFacade o-- "1" IAuthenticationClient
+GatewayFacade o-- "1" IDataProcessingClient
+GatewayFacade o-- "1" IExplainableAIClient
+
+interface IUserRepository {
+  + findByEmail(email: String) : User
+  + findByResetToken(tokenHash: String) : User
+  + save(user: User)
+  + update(user: User)
+}
+
+class UserRepositoryImpl implements IUserRepository {
+  - dbConnection
+  + findByEmail(email: String) : User
+  + findByResetToken(tokenHash: String) : User
+  + save(user: User)
+  + update(user: User)
+}
+
+class AuditClient implements IAuditNotifier {
+  - httpClient
+  + notify(eventType: String, details: Map)
+}
+
+class AuthenticationService {
+  - userRepository: IUserRepository
+  - auditNotifier: IAuditNotifier
+  - passwordHasher
+  - jwtSigner
+
+  + register(data: RegisterRequest)
+  + login(data: LoginRequest) : TokenResponse
+  + validateToken(token: String) : String
+  + requestPasswordReset(data: ForgotPasswordRequest)
+  + resetPassword(data: ResetPasswordRequest)
+}
+
+AuthenticationService o-- "1" IUserRepository
+AuthenticationService o-- "1" IAuditNotifier
+
+interface IProcessedDataRepository {
+  + save(data: ProcessedData) : String
+}
+
+class DataRepositoryImpl implements IProcessedDataRepository {
+  - dbConnection
+  + save(data: ProcessedData) : String
+}
+
+interface IProcessingStep {
+  + setNext(step: IProcessingStep)
+  + handle(dataContext: DataContext)
+}
+
+abstract class BaseProcessingStep implements IProcessingStep {
+  - next: IProcessingStep
+  + setNext(step)
+  + handle(dataContext: DataContext)
+}
+
+class ValidationStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+class AnonymizationStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+class EnrichmentStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+
+class DataProcessingService {
+  - repository: IProcessedDataRepository
+  - auditNotifier: IAuditNotifier
+  - chainHead: IProcessingStep
+ 
+  + processData(data: AnalyseRequest) : String
+  + getProcessedData(dataId: String) : ProcessedData
+}
+
+DataProcessingService o-- "1" IProcessedDataRepository
+DataProcessingService o-- "1" IAuditNotifier
+DataProcessingService o-- "1" IProcessingStep : (chainHead)
+ValidationStep o--> "1" AnonymizationStep : next
+AnonymizationStep o--> "1" EnrichmentStep : next
+
+interface IReportRepository {
+  + save(report: Report) : Report
+  + findByDoctor(doctorId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+}
+
+class ReportRepositoryImpl implements IReportRepository {
+  - dbConnection
+  + save(report: Report) : Report
+  + findByDoctor(doctorId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+}
+
+interface IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+
+class ClassicMLStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+class MultimodalStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+
+class StrategyFactory {
+  + getStrategy(mode: String) : IAnalysisStrategy
+}
+
+class ExplainableAIService {
+  - reportRepo: IReportRepository
+  - auditNotifier: IAuditNotifier
+  - dataClient: IProcessedDataClient
+  - strategyFactory: StrategyFactory
+
+  + performAnalysis(dataId: String, mode: String) : DiagnosisReport
+  + getReports(doctorId: String, patientId: String) : list<ReportSummary>
+}
+
+ExplainableAIService o-- "1" IReportRepository
+ExplainableAIService o-- "1" IAuditNotifier
+ExplainableAIService o-- "1" IProcessedDataClient
+ExplainableAIService ..> IAnalysisStrategy : uses
+ExplainableAIService o-- "1" StrategyFactory
+
+interface ILogRepository {
+  + save(logEntry: LogEventRequest)
+}
+
+class LogRepositoryImpl implements ILogRepository {
+  - dbConnection
+  + save(logEntry: LogEventRequest)
+}
+
+class AuditService {
+  - logRepository: ILogRepository
+  + logEvent(data: LogEventRequest) 
+}
+
+AuditService o-- "1" ILogRepository
+
+@enduml
