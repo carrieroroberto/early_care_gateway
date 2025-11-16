@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 import jwt
 
 class JwtSigner:
-
-    def __init__(self, secret="SECRET", expires_minutes=30):
+    def __init__(self, secret, expires_minutes):
         self.secret = secret
         self.expires = expires_minutes
 

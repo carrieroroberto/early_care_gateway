@@ -3,10 +3,11 @@ from ..utils.hasher import PasswordHasher
 from ..utils.jwt_signer import JwtSigner
 from ..utils.audit_notifier import AuditClient
 from ..services.authentication_service import AuthenticationService
+from config import settings
 
 user_repository = UserRepositoryImpl()
 password_hasher = PasswordHasher()
-jwt_signer = JwtSigner(secret="my-secret")
+jwt_signer = JwtSigner(secret=settings.jwt_secret, expires_minutes=settings.jwt_expires_minutes)
 audit_notifier = AuditClient()
 
 auth_service = AuthenticationService(
