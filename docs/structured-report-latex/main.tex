@@ -1,0 +1,43 @@
+\PassOptionsToPackage{table, dvipsnames}{xcolor}
+\documentclass[a4paper,oneside,12pt]{report}
+
+\usepackage[a4paper,margin=3cm]{geometry}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\usepackage[newfloat]{minted}
+\SetupFloatingEnvironment{listing}{name=Codice}
+\usepackage[font=small,skip=1pt]{caption}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    allcolors=black
+}
+
+\begin{document}
+\pagenumbering{gobble}
+
+\input{front}
+\input{abstract}
+\tableofcontents
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\include{chapters/01.introduction}
+\include{chapters/02.cap2}
+\include{chapters/03.cap3}
+\include{chapters/04.cap4}
+\include{chapters/05.cap5}
+\include{chapters/06.conclusion}
+
+\bibliographystyle{plain}
+\bibliography{biblo}
+
+\end{document}
