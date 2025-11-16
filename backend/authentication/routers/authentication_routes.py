@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..utils.dependecy_injection import get_auth_service
+from ..utils.authentication_di import get_auth_service
 from ..services.authentication_service import AuthenticationService
 
 router = APIRouter(prefix="/auth")
