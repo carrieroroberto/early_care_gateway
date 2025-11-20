@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS doctors (
     email VARCHAR(100) UNIQUE
 );
 
-INSERT INTO doctors (id, name, surname, email) VALUES
-("0000000000000000", "Mario", "Rossi", "rossi@example.com"),
-("1111111111111111", "Anna", "Bianchi", "bianchi@example.com");
+INSERT INTO doctors (id, name, surname, email) 
+VALUES 
+('0000000000000000', 'Mario', 'Rossi', 'rossi@example.com'),
+('1111111111111111', 'Anna', 'Bianchi', 'bianchi@example.com');
