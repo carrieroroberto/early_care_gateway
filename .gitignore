@@ -33,7 +33,6 @@ out/
 
 # Environment variables
 .env
-.env.*
 
 # Logs and temporary files
 *.log
