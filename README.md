@@ -4,12 +4,12 @@ Gateway that routes clinical data to provide medical decision support. Triage AI
 # Quickstart
 
 ## 1. Clone the repository
-```bash
+```console
 git clone https://github.com/carrieroroberto/early_care_gateway.git
 ```
 
 ## 2. Rename .env.example in .env and fill with your data
-```bash
+```console
 POSTGRES_USER=postgres_user
 POSTGRES_PASSWORD=postgres_password
 POSTGRES_DB=db_name
@@ -22,7 +22,7 @@ SECRET_KEY=secret_key
 ```
 
 ## 3. Run the project
-```bash
+```console
 cd early_care_gateway/backend
 docker-compose up --build
 ```
