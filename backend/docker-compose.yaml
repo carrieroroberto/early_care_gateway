@@ -4,19 +4,19 @@ services:
   postgres:
     image: postgres:15
     restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db_init:/docker-entrypoint-initdb.d
+      - ./db/db_init:/docker-entrypoint-initdb.d
 
   pgadmin:
     image: dpage/pgadmin4:latest
     restart: always
+    env_file:
+      - .env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
@@ -24,6 +24,19 @@ services:
       - "8080:80"
     depends_on:
       - postgres
+
+  auth_service:
+    build:
+      context: ./authentication
+    container_name: auth_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   pgdata:
