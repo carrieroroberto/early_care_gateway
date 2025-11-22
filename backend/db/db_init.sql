@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS doctors (
 
 INSERT INTO doctors (name, surname, email, hashed_password) 
 VALUES 
-    ('Mario', 'Rossi', 'rossi@example.com', 'hashed_password_1'),
-    ('Anna', 'Bianchi', 'bianchi@example.com', 'hashed_password_2');
+    ('Mario', 'Rossi', 'rossi@doctors.com', 'doctor_hashed_password1'),
+    ('Giovanni', 'Bianchi', 'bianchi@doctors.com', 'doctor_hashed_password2');
