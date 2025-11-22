@@ -9,7 +9,7 @@ git clone https://github.com/carrieroroberto/early_care_gateway.git
 ```
 
 ## 2. Rename .env.example in .env and fill with your data
-You can use *secret_key_generator.py* to generate the secret key.
+You can use *backend/secret_key_generator.py* to generate the secret key.
 ```bash
 POSTGRES_USER=postgres_user
 POSTGRES_PASSWORD=postgres_password
