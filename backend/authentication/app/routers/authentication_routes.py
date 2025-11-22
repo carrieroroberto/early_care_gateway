@@ -1,42 +1,37 @@
 from fastapi import APIRouter, Depends, HTTPException
+from ..schemas.doctor_schema import RegisterDoctorRequest, RegisterDoctorResponse, LoginDoctorResponse, \
+    LoginDoctorRequest, ValidateTokenResponse, ValidateTokenRequest
 from ..utils.dependencies import get_auth_service
 from ..services.authentication_service import AuthenticationService
 
-router = APIRouter(prefix="/authentication", tags=["Authentication"])
+router = APIRouter(prefix="/authentication", tags=["Endpoints"])
 
-@router.post("/register")
+@router.post("/register", response_model=RegisterDoctorResponse)
 async def register(
-    name: str,
-    surname: str,
-    email: str,
-    password: str,
+    register_request: RegisterDoctorRequest,
     service: AuthenticationService = Depends(get_auth_service)
 ):
     try:
-        doctor = await service.registerDoctor(name, surname, email, password)
-        return {"message": "Doctor registered successfully", "doctor_id": doctor.id}
+        return await service.registerDoctor(register_request)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/login")
+@router.post("/login", response_model=LoginDoctorResponse)
 async def login(
-    email: str,
-    password: str,
+    login_request: LoginDoctorRequest,
     service: AuthenticationService = Depends(get_auth_service)
 ):
     try:
-        token = await service.loginDoctor(email, password)
-        return {"jwt_token": token}
+        return await service.loginDoctor(login_request)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-@router.get("/validate")
+@router.post("/validate", response_model=ValidateTokenResponse)
 async def validate(
-    token: str,
+    token_request: ValidateTokenRequest,
     service: AuthenticationService = Depends(get_auth_service)
 ):
     try:
-        doctor_id = await service.validateToken(token)
-        return {"doctor_id": doctor_id}
+        return await service.validateToken(token_request)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))

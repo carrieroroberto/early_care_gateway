@@ -1,5 +1,5 @@
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from jwt import ExpiredSignatureError, InvalidTokenError
 from typing import Dict
 
@@ -9,7 +9,7 @@ class JwtSigner:
         self.expires_minutes = expires_minutes
 
     def create_token(self, subject: str) -> str:
-        expire = datetime.utcnow() + timedelta(minutes=self.expires_minutes)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=self.expires_minutes)
         payload = {"sub": subject, "exp": expire}
         return jwt.encode(payload, self.secret, algorithm="HS256")
 
