@@ -61,7 +61,7 @@ The file *.env.example* is only a template of the environment configuration used
 
 If you have Python installed locally:
 
-    python3 secret_key_generator.py
+    python secret_key_generator.py
 
 Copy the generated key into your *.env* file under *SECRET_KEY*.
 
