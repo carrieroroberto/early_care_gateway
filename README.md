@@ -32,7 +32,7 @@ Special emphasis is placed on **privacy**, **traceability**, and **response time
 
 Before running the project, make sure the following tools are installed:
 
-- **Python 3.x** (for generating the secret key)
+- **Python 3** (for generating the secret key)
 - **Docker** (for containerized deployment)
 - **Docker Compose** (for orchestrating multi-container setup)
 - **Git** (for cloning the repository)
