@@ -7,10 +7,10 @@ services:
     env_file:
       - .env
     ports:
-      - "${DB_PORT}:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/db_init:/docker-entrypoint-initdb.d
+      - ./db_init:/docker-entrypoint-initdb.d
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -18,8 +18,8 @@ services:
     env_file:
       - .env
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
       - "8080:80"
     depends_on:
@@ -27,7 +27,7 @@ services:
 
   auth_service:
     build:
-      context: ./authentication
+      context: ./backend/authentication
     container_name: auth_service
     restart: always
     env_file:
