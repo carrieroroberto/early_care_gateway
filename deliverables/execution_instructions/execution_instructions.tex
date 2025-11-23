@@ -34,10 +34,10 @@
 Before running the project, ensure the following tools are installed on your system:
 
 \begin{itemize}
-    \item \textbf{Python 3} (for generating secret keys)
-    \item \textbf{Docker} (for containerized deployment)
-    \item \textbf{Docker Compose} (for orchestrating multi-container setup)
-    \item \textbf{Git} (for cloning the repository)
+    \item \textbf{Python 3}: Generate the JWT secret key
+    \item \textbf{Docker}: Build containers
+    \item \textbf{Docker Compose}: Deploy multi-container system
+    \item \textbf{Git}: Clone the repository
 \end{itemize}
 
 \noindent
@@ -66,29 +66,28 @@ You should either rename it to \texttt{.env} or create a new \texttt{.env} file 
 If you have Python installed locally, you can generate a secure secret key with the following command:
 
 \begin{lstlisting}[language=bash]
-cd backend
 python secret_key_generator.py
 \end{lstlisting}
 Then, copy the generated key into your \texttt{.env} file under \texttt{SECRET\_KEY}.
 
 \subsubsection{Example .env configuration}
 \begin{lstlisting}
-POSTGRES_USER=postgres_user
-POSTGRES_PASSWORD=postgres_password
-POSTGRES_DB=db_name
+POSTGRES_HOST=postgres
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=postgres
 POSTGRES_PORT=5432
 
-PGADMIN_EMAIL=pgadmin_email
-PGADMIN_PASSWORD=pgadmin_password
+PGADMIN_EMAIL=admin@admin.com
+PGADMIN_PASSWORD=admin
 
-SECRET_KEY=generated_secret_key_here
+SECRET_KEY=123456789abcdefgh
 \end{lstlisting}
 
 \subsection{3. Run the project}
-Navigate to the backend directory and start the project using Docker Compose:
+Start the project using Docker Compose:
 
 \begin{lstlisting}[language=bash]
-cd backend
 docker-compose up --build
 \end{lstlisting}
 
@@ -102,13 +101,13 @@ This command will:
 
 \subsection{4. Use the system}
 \begin{itemize}
-    \item Browse at http://localhost:port and start working on.
+    \item Browse at http://localhost:3000 to try the system.
 \end{itemize}
 
 \section{Troubleshooting}
 \begin{itemize}
     \item Monitor the logs in the terminal to ensure that all services have been initialized without errors.
-    \item Ensure that no other services are running on the ports used by the system (e.g., PostgreSQL: 5432, pgAdmin: 8080) to avoid conflicts.
+    \item Ensure that no other services are running on the ports used by the system to avoid conflicts.
     \item If Docker images fail to build, try stopping and removing existing containers with \texttt{docker-compose down}, then rebuild with \texttt{docker-compose up --build}.
     \item On Linux systems, Docker commands may require \texttt{sudo}.
     \item Access pgAdmin at \texttt{http://localhost:8080} using the credentials defined in your \texttt{.env} file to manage the database in a user-friendly interface.
