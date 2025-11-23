@@ -1,0 +1,29 @@
+\chapter{Introduction}
+
+The contemporary healthcare field is currently facing significant and systemic challenges, largely driven by the phenomena of severe overcrowding in emergency departments, critical medical shortages, and increasing pressure on triage systems. At present, these essential prioritization tools often rely heavily on manual protocols and the subjective opinions of individual operators. These particular conditions create a fragile environment that can lead to potential diagnostic errors, substantial variability in decision-making processes, and high rates of burnout among healthcare professionals.
+
+To address these critical issues, the proposed EarlyCare Gateway project aims to develop an advanced Clinical Decision Support System (CDSS), designed to assist medical staff in the preliminary diagnosis and triage optimization process. It is important to emphasize that this system is designed only for professional use, as it is intended to assist trained clinicians in order to prevent the risks associated with self-diagnosis and ensuring that the final decision always rests with a qualified human operator.
+
+While the clinical objective is clear, the engineering challenge lies in creating a solution that is robust, scalable, and capable of adapting to the rapid evolution of Artificial Intelligence. The adoption of automated decision-making techniques in medicine is often hindered by skepticism regarding the "Black Box" nature of algorithms. Therefore, this project is not merely an exercise in applying Machine Learning, but a study in software architecture designed to be future-proof.
+
+\section{Context and Motivation}
+The project is situated in a context where the application of Artificial Intelligence, specifically Machine Learning and Large Language Models, positions the solution as technologically advanced. Currently, the adoption of automatic decision-making techniques in the medical sector is still limited, often slowed down by skepticism, ethical considerations, and defining regulations. The EarlyCare Gateway aims to explore a robust technological solution that addresses these challenges.
+
+The primary goal is to support the preliminary diagnosis of patient pathologies, thereby optimizing the triage process. A critical aspect of the system's motivation is the definition of its scope: the solution is conceived for exclusive professional use by authorized medical personnel. Access or use by patients is strictly excluded to prevent risks associated with self-diagnosis and the misinterpretation of clinical data.
+
+From an architectural perspective, the solution is based on a containerized microservices architecture. This approach ensures that components are independent yet cooperating, fostering high cohesion and low coupling, which improves system maintainability and scalability.
+
+\section{Document Structure}
+This document details the design, development, and implementation of EarlyCare Gateway, organized as follows:
+
+The State of the Art chapter analyzes the current healthcare context, focusing in particular on the limitations of manual triage protocols, such as the Manchester Triage System. It explores the application of Artificial Intelligence in medicine, comparing the effectiveness of traditional Machine Learning approaches with the emerging capabilities of Large Language Models. Special attention is given to Explainable AI techniques, which are crucial for transparency in clinical decision support systems.
+
+The Requirements and Architecture chapter provides a detailed description of Functional Requirements and Non-Functional Requirements. This chapter presents the containerized microservices architecture designed to meet these constraints, illustrating its decomposition into independent but cooperative components to ensure high cohesion and low coupling. Furthermore, the implemented Design Patterns are analyzed, and the corresponding UML diagrams and RESTful API contracts are described to clarify the interaction between services.
+
+The AI Solutions and Explainability chapter examines the innovative core of the project. It describes the Swappable AI logic and the specific models integrated to analyse text, images, and structured data. Particular importance is given to Explainable AI strategies.
+
+In the Development and Deployment chapter the technology stack and development tools are presented. Agile Kanban principles are applied during development, while containerization practices are used for deployment. This chapter also covers code organization and the implementation of the main classes that realize the architectural patterns defined in the previous sections.
+
+The Testing and Results chapter reports the analysis of system performance and the validation of the implemented models. The results are discussed both in terms of AI evaluation metrics and system metrics.
+
+Finally, the Conclusion chapter summarizes the milestones achieved with the development of EarlyCare Gateway, highlighting how the solution effectively addresses modern triage challenges by reducing the cognitive load on medical staff. The chapter also outlines potential future developments.

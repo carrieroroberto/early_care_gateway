@@ -1,0 +1,198 @@
+\chapter{Requirements and Architecture}
+
+This chapter focuses on translating the project's objectives into concrete system specifications and architectural solutions. It emphasizes how the identified requirements, both functional and non-functional, inform the design of a robust, secure, and maintainable platform. The discussion highlights the rationale behind adopting a microservices architecture, explaining how the decomposition into independent services supports modularity, scalability, and clear separation of responsibilities.
+
+Furthermore, the section on service interactions demonstrates how RESTful APIs and structured communication patterns coordinate workflows across components, ensuring reliable and predictable system behavior.
+
+Finally, an overview about the integration of design patterns is presented.
+
+\section{Requirements Analysis}
+The requirements analysis phase is critical to defining the operational boundaries of the project. The system is designed to operate in a high-pressure clinical environment, where precision, reliability, and usability are paramount. The analysis identifies the primary stakeholders as authorized medical professionals, deliberately excluding patient access to mitigate the risks associated with self-diagnosis and misinterpretation of clinical data.
+
+System requirements are typically categorized into functional and non-functional requirements, each serving a distinct purpose in defining the system’s behavior and quality attributes. In this project, non-functional requirements are further informed by the FURPS+ model, which encompasses Functionality, Usability, Reliability, Performance, and Supportability, along with additional concerns such as security, scalability, and maintainability.
+
+\subsection{Functional Requirements (FR)}
+Functional Requirements describe what the system must do in terms of the core features, actions, and interactions that enable users to achieve their objectives.
+
+For the project, the following main functional requirements have been identified.
+
+\subsubsection{Authentication}
+The system must provide robust mechanisms for managing the lifecycle of medical user accounts. This includes a registration process where new doctors can create an account using a valid email and secure password. Crucially, the system must handle authentication securely, allowing registered professionals to log in and obtain an access token (JWT, JSON Web Token) for subsequent sessions. The security requirement mandates the use of industry-standard authentication protocols and all data in transit between the client and the server must be encrypted to prevent eavesdropping, satisfying the strict security standards required for handling health-related data. Additionally, to prevent loss of access, the system requires a secure credential recovery workflow, enabling users to reset their passwords via an automated email service.
+
+\subsubsection{Intelligent Analysis}
+The core function of the platform is to perform preliminary diagnostic analyses on varied clinical data. The system must accept different types of input data uploaded by the doctor, specifically medical images (such as X-rays or skin lesion photos), textual clinical notes, or signal data like ECGs. Upon receiving this data, the system is required to trigger the appropriate artificial intelligence model to classify the pathology. A mandatory aspect of this function is that the output must not be a simple label. It must generate a detailed report that includes the predicted diagnosis, an urgency level, and a specific explanation of the reasoning, ensuring the doctor understands the basis of the AI's suggestion.
+ 
+\subsubsection{Report Persistence}
+To support ongoing patient care, the system must ensure the persistence and retrievability of all generated diagnostic reports. Authorized doctors must be able to access a dedicated interface to view the history of their analyses. This requirement implies the need for advanced filtering capabilities, specifically allowing the user to search for reports associated with a specific patient identifier. This ensures that the decision support provided is not ephemeral but becomes part of the accessible clinical history for review and consultation.
+ 
+\subsection{Non-Functional Requirements (NFR)}
+Non-Functional Requirements describe how the system should operate. Rather than focusing on specific functions, they define the quality attributes and constraints that shape the system’s performance, reliability, security, scalability, and maintainability.
+
+The main non-functional requirements for the projects are described in the following paragraphs.
+
+\subsubsection{Privacy}
+Protecting patient identity is a foundational constraint. The system must ensure that no personally identifiable information (PII) is stored or processed in clear text within the analysis modules. To achieve this, the system requires an anonymization mechanism that irreversibly transforms sensitive identifiers, such as the fiscal code, into a unique hash string before any processing occurs. This ensures that even if data is intercepted during the analysis phase, it cannot be linked back to a specific individual without the secure context possessed only by the authorized medical staff.
+
+\subsubsection{Traceability}
+Traceability imposes that the system provides a granular and immutable history of usage. This requirement goes beyond simple error logging. It necessitates an asynchronous recording mechanism that captures the precise timestamp, the actor (Doctor ID), the subject (Patient ID), and the type of operation for every critical event. This ensures that the system complies with medical liability standards, allowing for a complete post-hoc reconstruction of the decision-making process without impacting the application's performance.
+
+\subsubsection{Explainability}
+To address the "Black Box" problem common in AI adoption, the system must satisfy the requirement of explainability. It is not sufficient for the system to be accurate. It must be transparent. For every diagnostic prediction, the system is required to provide an interpretability layer, using techniques that highlights which clinical features influenced the decision.
+
+\subsubsection{Configurable Response Time}
+The system must be adaptable to different clinical urgencies, balancing speed and accuracy, It is needed to have a Swappable AI capability, which allows the runtime configuration of the analysis strategy. The system must support both traditional Machine Learning model for immediate results and advanced models, such as CNNs and LLMs, for high-accuracy and reasoning-rich analysis. This flexibility ensures the system's non-functional performance characteristics align with the varying time constraints of real-world medical scenarios.
+
+\subsection{Use-Cases}
+
+Use-cases are a fundamental tool in system analysis and design, providing a clear description of the interactions between the system and its users. These interactions are modeled using the Unified Modeling Language (UML).
+
+The use-cases diagram shown in Figure \ref{fig:use-cases} illustrates the primary interactions between the system and its actors. The main actor, the Doctor, performs essential operations such as registration, login, diagnostic requests, report consultation, and password management. The Email Service acts as a supporting actor, assisting in password recovery processes. Core system functionalities, including JWT validation and event logging, are included in multiple use cases to ensure secure and traceable operations. The diagnostic workflow incorporates an extendable AI analysis component, allowing either rapid Machine Learning-based processing or more comprehensive Large Language Model reasoning, reflecting the system's configurable performance and support for intelligent decision-making. This diagram provides a high-level overview of the system's behavior, serving as a reference for the detailed functional and architectural design.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/use-cases.png} 
+    \caption{Use-Cases Diagram (UML) of the EarlyCare Gateway System.}
+    \label{fig:use-cases}
+\end{figure}
+
+\section{Microservices Architecture}
+
+The EarlyCare Gateway system is designed following a microservices architecture, a modern approach that emphasizes modularity, scalability, and maintainability. In this architecture, the system is decomposed into independent services, each responsible for a specific domain of functionality, such as authentication, diagnostic processing, report management, or logging. This separation allows each service to be developed, deployed, and maintained independently, enabling rapid evolution of the system while minimizing the risk of disruptions to other components \cite{7796008}.
+
+Adopting a microservices approach offers several benefits in a clinical environment, where reliability, performance, and data security are critical. By isolating functionalities into distinct services, the system can efficiently handle concurrent operations, scale resources according to demand, and quickly integrate new technologies or AI models without affecting the overall workflow.
+
+\subsection{Main Components}
+The system is organized as a collection of loosely coupled microservices, each responsible for a specific domain of functionality. This decomposition allows the system to maintain high cohesion within individual services while minimizing dependencies between them.
+
+The following UML component diagram provides an overview of these architectural elements and their interactions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/components.png} 
+    \caption{Components Diagram (UML) of the EarlyCare Gateway System.}
+    \label{fig:components}
+\end{figure}
+
+The component diagram in Figure \ref{fig:components} illustrates the key architectural elements and their interactions, as described below.
+
+\subsubsection{User Interface}
+The User Interface (UI) serves as the entry point for authorized doctors, implemented as a web-based single-page application that allows users to submit clinical data, request diagnostics, and consult reports. All user actions are routed through the Gateway, which acts as a centralized API entry point responsible for directing requests to the appropriate backend services and enforcing security policies.
+
+\subsubsection{Authentication Service}
+The Authentication Service manages user registration, login, and password recovery, interfacing with the Doctors Database to securely store credentials and access rights. It also communicates asynchronously with the Audit Service to log authentication-related events, ensuring traceability of all access operations.
+
+\subsubsection{Data Processing Service}
+The Data Processing Service is responsible for anonymizing and enriching clinical data, storing intermediate results in the Processed Data Database. This component supports flexible handling of multiple data types, including images, textual notes, and numerical or signal-based clinical measurements. It also reports processing events to the Audit Service to maintain a complete operational log.
+
+\subsubsection{Explainable AI Service}
+The Explainable AI Service implements the system’s core diagnostic logic. It retrieves preprocessed data from the Data Processing Service, performs analysis using either machine learning models or large language models, and stores diagnostic reports in the Reports Database. This service is designed to be swappable, enabling runtime selection of the appropriate AI strategy according to data type and clinical urgency. All AI operations are logged via the Audit Service to ensure transparency and accountability.
+
+\subsubsection{Audit Service}
+Finally, the Audit Service consolidates logging and monitoring across all services. It writes all events to the Audit Database, providing a complete, asynchronous record of system activity that supports compliance, debugging, and operational oversight. The coordinated interaction between these components ensures that the EarlyCare Gateway operates as a secure, reliable, and maintainable platform for clinical decision support.
+
+\subsection{Application Program Interface Communication}
+
+The microservices paradigm introduces complexity in communication and orchestration. Ensuring consistent and secure interactions among services requires robust API design, clear contract definitions, and comprehensive monitoring. In the EarlyCare Gateway system, all user interactions are routed through the Gateway, which acts as a central API entry point, orchestrating requests to the appropriate backend services.
+
+Sequence diagrams are employed to visually model the flow of information between actors and services, providing clarity on how requests, validations, and responses occur within the system. So, the diagrams serve as a bridge between the conceptual design and the actual implementation, providing a precise reference during development phase.
+
+An overview of the system’s API endpoints is provided below, focusing on the operations performed at each endpoint and illustrating how user requests are processed, routed, and handled by the various services. For complete technical specifications, including detailed request and response formats, authentication mechanisms, and parameter definitions, refer to the technical documentation.
+
+\subsubsection{POST /register}
+The \texttt{POST /register} endpoint in Figure \ref{fig:seq-register} allows the registration of a new medical user in the system. This route is publicly accessible and does not require authentication. When a doctor submits a registration request through the UI, the Gateway receives the email and password in the request body and forwards it to the Authentication Service. The Authentication Service checks the existence of the email in the Doctors Database. If the email is already in use, an error is returned to the Gateway, which forwards it to the UI. If the email is available, the service hashes the password, creates a unique internal ID for the user, and stores the credentials securely in the Database. An asynchronous notification of the registration event is sent to the Audit Service, and the Gateway responds to the UI with a success or failure message.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/register.png} 
+    \caption{UML Sequence Diagram for Registration.}
+    \label{fig:seq-register}
+\end{figure}
+
+\subsubsection{POST /login}
+The \texttt{POST /login} endpoint in Figure \ref{fig:seq-login} handles doctor authentication and returns a JWT for subsequent authenticated requests. The UI submits the login credentials to the Gateway, which forwards the request to the Authentication Service. The service verifies the email and password and checks the hashed password. If the credentials are invalid, an error is returned. On success, the service generates a JWT containing the unique doctor ID, signs it with a secret key, and asynchronously logs the event in the Audit Service. The Gateway then returns the JWT to the UI for storage and use in subsequent requests.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/login.png} 
+    \caption{UML Sequence Diagram for Login.}
+    \label{fig:seq-login}
+\end{figure}
+
+\subsubsection{POST /analyse}
+The \texttt{POST /analyse} endpoint in Figure \ref{fig:seq-analysis} executes a diagnostic analysis. The request must include a valid JWT in the header. The UI submits the clinical data to the Gateway, which first validates the token via the Authentication Service. If the token is invalid or expired, the request is rejected. Otherwise, the Gateway forwards the raw data to the Data Processing Service. The service performs data anonymization and enrichment, stores intermediate results in the Database, and logs the operation asynchronously in the Audit Service. The processed data ID is then sent to the Explainable AI Service, via Gateway. Explainable AI Service retrieves the data, applies the appropriate AI strategy, generates a diagnostic report, stores it in the Reports Database, and logs the completion in the Audit Service. Finally, the Gateway returns the report to the UI.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/analyse.png} 
+    \caption{UML Sequence Diagram for Analysis.}
+    \label{fig:seq-analysis}
+\end{figure}
+
+\subsubsection{GET /reports}
+The \texttt{GET /reports} endpoint in Figure \ref{fig:seq-reports} allows the retrieval of diagnostic reports. A valid JWT is required. The UI requests all reports or those filtered by a specific patient ID. The Gateway validates the JWT via the Authentication Service and extracts the doctor’s ID. The request is forwarded to the Explainable AI Service, which queries the Reports Database using the Repository Pattern. The resulting list of reports is returned to the Gateway, which forwards it to the UI in JSON format.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/reports.png} 
+    \caption{UML Sequence Diagram for Report Retrieval.}
+    \label{fig:seq-reports}
+\end{figure}
+
+\subsubsection{POST /reset-password, POST /new-password}
+The \texttt{POST /reset-password} endpoint in the first part of Figure \ref{fig:seq-password} initiates the password reset procedure. It is publicly accessible. The UI submits the doctor’s email to the Gateway, which forwards it to the Authentication Service. The service verifies the email in the Doctors Database, generates a reset token with an expiration timestamp, and stores its hash in the database. A reset email containing the token is sent to the user. The Gateway returns a generic response to the UI, without disclosing whether the email exists, to maintain security. The event is logged asynchronously in the Audit Service.
+
+The \texttt{POST /new-password} endpoint in the second part of Figure \ref{fig:seq-password} completes the password reset process. After the user clicks the link in the email, the UI collects the new password and token from the URL and submits them to the Gateway. The request is forwarded to the Authentication Service, which hashes the token and verifies its validity and expiration in the Database. If valid, the new password is hashed and updated in the Doctors Database. Otherwise, an error is returned. The reset token is invalidated in all cases, and the event is logged asynchronously in the Audit Service. The Gateway finally responds to the UI confirming success or failure.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/password.png} 
+    \caption{UML Sequence Diagram for Password Reset.}
+    \label{fig:seq-password}
+\end{figure}
+
+\section{Design Patterns}
+\label{sec:design-patterns}
+
+The EarlyCare Gateway system leverages well-established software design patterns to ensure maintainability, modularity, and scalability across its microservices architecture. By applying appropriate patterns, the project achieves a clear separation of concerns, reduces coupling between components, and facilitates future extensions or modifications \cite{Hunt2013}.
+
+The Table \ref{tab:design-patterns} summarizes the mapping between microservices components and the corresponding design patterns, described below.
+
+\subsection{Structural Patterns}
+
+Structural patterns are employed to define how the various components of the system are organized and interact at a higher level. In the project, the following structural patterns are used.
+
+\subsubsection{Facade Pattern}
+The Gateway component functions as a Facade, providing a unified interface to the underlying microservices. It abstracts the internal complexity of the system and simplifies the interaction for external clients, such as the web-based UI. By centralizing API routing and request orchestration, the Facade ensures that clients do not need to manage direct interactions with multiple services.
+
+\subsubsection{Repository Pattern}
+The Repository Pattern is widely used across the Authentication, Data Processing, and Audit services. Each service interacts with its underlying database through a repository interface, encapsulating data access logic. This separation allows for easier database management, testing, and potential replacement of storage technologies without affecting the business logic of the services.
+
+\subsection{Behavioural Patterns}
+
+Behavioural patterns define the communication and interaction strategies among objects and services. They are crucial for coordinating actions and managing workflows. The behavioural patterns presented in the system are described below.
+
+\subsubsection{Strategy Pattern}
+The Explainable AI service applies the Strategy Pattern to implement swappable AI models. Depending on the type of clinical data and the required diagnostic accuracy, the service dynamically selects between Machine Learning and Large Language Models. This pattern ensures flexibility and extensibility, allowing new AI strategies to be integrated without modifying existing code.
+
+\subsubsection{Observer Pattern}
+The Observer Pattern is used to notify the Audit service of important operations, such as user registration, login, or diagnostic analysis. Services emit events asynchronously, and the Audit service subscribes to these events to log them persistently. This decouples the main business logic from audit logging while maintaining complete traceability of actions.
+
+\subsubsection{Chain of Responsibility Pattern}
+The Data Processing service employs the Chain of Responsibility Pattern to handle data validation, anonymization, and enrichment in a sequential and modular manner. Each processing step is encapsulated in a handler, which can pass the data to the next handler in the chain. This approach allows for flexible processing pipelines and simplifies the addition or modification of individual processing steps.
+
+\begin{table}[H]
+\centering
+\caption{Overview of Microservice Components and Design Patterns.}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Component} & \textbf{Design Pattern}\\
+\hline
+Gateway & Facade\\
+Authentication & Repository, Observer\\
+Data Processing & Repository, Chain of Responsibility, Observer\\
+Explainable AI & Strategy, Observer\\
+Audit & Repository\\
+\hline
+\end{tabular}
+\label{tab:design-patterns}
+\end{table}
