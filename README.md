@@ -19,7 +19,6 @@ Special emphasis is placed on **privacy**, **traceability**, and **response time
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
-- [Optional: Verify the setup](#optional-verify-the-setup)
 - [Troubleshooting](#troubleshooting)
 
 ---
