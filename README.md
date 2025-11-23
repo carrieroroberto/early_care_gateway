@@ -27,9 +27,9 @@ Special emphasis is placed on **privacy**, **traceability**, and **response time
 
 Before running the project, make sure the following tools are installed:
 
-- **Git** (for cloning the repository)
-- **Python 3** (for generating the JWT secret key)
-- **Docker + Docker Compose V2** (for containerized deployment and orchestrating multi-container setup)
+- **Git:** Clone the repository
+- **Python 3:** Generate the JWT secret key
+- **Docker + Docker Compose V2:** Build images and deploy multi-container system
 
 Check versions:
 
