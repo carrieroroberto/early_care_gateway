@@ -55,7 +55,7 @@ git --version
 
 **2. Configure environment variables**
 
-    The file .env.example is only a template of the environment configuration used by the system (not pushed on GitHub as a security best practice). You should either rename it to .env or create a new .env file with the correct values.
+The file .env.example is only a template of the environment configuration used by the system (not pushed on GitHub as a security best practice). You should either rename it to .env or create a new .env file with the correct values.
 
 **Generate a secret key**
 
@@ -91,9 +91,8 @@ This will:
 
 **Optional: Verify the setup**
 
-Monitor the logs in the terminal to ensure that all services have been initialized without errors.
-
-Access pgAdmin at http://localhost:8080 using the credentials in your .env to manage the database in a user-friendly interface.
+- Monitor the logs in the terminal to ensure that all services have been initialized without errors.
+- Access pgAdmin using the credentials in your .env to manage the database in a user-friendly interface.
 
 ## Troubleshooting
 
