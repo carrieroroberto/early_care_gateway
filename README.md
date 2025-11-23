@@ -55,7 +55,7 @@ git --version
 
 **2. Configure environment variables**
 
-The file .env.example is only a template of the environment configuration used by the system (not pushed on GitHub as a security best practice). You should either rename it to .env or create a new .env file with the correct values.
+The file *.env.example* is only a template of the environment configuration used by the system (not pushed on GitHub as a security best practice). You should either rename it to *.env* or create a new file with the correct values.
 
 **Generate a secret key**
 
@@ -63,7 +63,7 @@ If you have Python installed locally:
 
     python3 backend/secret_key_generator.py
 
-Copy the generated key into your .env file under SECRET_KEY.
+Copy the generated key into your *.env* file under *SECRET_KEY*.
 
 **Example .env configuration**
 
@@ -92,7 +92,7 @@ This will:
 **Optional: Verify the setup**
 
 - Monitor the logs in the terminal to ensure that all services have been initialized without errors.
-- Access pgAdmin using the credentials in your .env to manage the database in a user-friendly interface.
+- Access pgAdmin using the credentials in your *.env* to manage the database in a user-friendly interface.
 
 ## Troubleshooting
 
