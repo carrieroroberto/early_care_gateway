@@ -8,7 +8,7 @@ class RegisterDoctorRequest(BaseModel):
 
 class LoginDoctorRequest(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8, max_length=100, strip_whitespace=True)
+    password: str = Field(..., min_length=1, strip_whitespace=True)
 
 class ValidateTokenRequest(BaseModel):
     token: str = Field(..., min_length=1, strip_whitespace=True)
