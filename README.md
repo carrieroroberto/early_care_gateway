@@ -61,12 +61,13 @@ The file *.env.example* is only a template of the environment configuration used
 
 If you have Python installed locally:
 
-    python3 backend/secret_key_generator.py
+    python3 secret_key_generator.py
 
 Copy the generated key into your *.env* file under *SECRET_KEY*.
 
 **Example .env configuration**
 
+    POSTGRES_HOST=postgres
     POSTGRES_USER=postgres_user
     POSTGRES_PASSWORD=postgres_password
     POSTGRES_DB=db_name
@@ -79,15 +80,14 @@ Copy the generated key into your *.env* file under *SECRET_KEY*.
 
 **3. Run the project**
 
-Navigate to the backend directory and start the project using Docker Compose:
+Start the project using Docker Compose:
 
-    cd backend
     docker-compose up --build
 
 This will:
-- Build all Docker images (backend, database, pgAdmin)
+- Build all Docker images (Backend, Database, Frontend)
 - Start all containers
-- Automatically link services for proper communication
+- Link services for communication
 
 **Optional: Verify the setup**
 
@@ -96,7 +96,7 @@ This will:
 
 ## Troubleshooting
 
-Ensure that no other services are running on the ports used by the system (e g., PostgreSQL: 5432, pgAdmin: 8080) to avoid conflicts.
+Ensure that no other services are running on the ports used by the system to avoid conflicts.
 
 If Docker images fail to build, stop and remove existing containers:
 
