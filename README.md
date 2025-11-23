@@ -40,7 +40,7 @@ Before running the project, make sure the following tools are installed:
 Check versions:
 
 ```bash
-python3 --version
+python --version
 docker --version
 docker-compose --version
 git --version
