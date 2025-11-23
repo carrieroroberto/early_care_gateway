@@ -19,12 +19,8 @@ Special emphasis is placed on **privacy**, **traceability**, and **response time
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
-  - [1. Clone the repository](#1-clone-the-repository)
-  - [2. Configure environment variables](#2-configure-environment-variables)
-  - [3. Run the project](#3-run-the-project)
 - [Optional: Verify the setup](#optional-verify-the-setup)
 - [Troubleshooting](#troubleshooting)
-- [Notes](#notes)
 
 ---
 
