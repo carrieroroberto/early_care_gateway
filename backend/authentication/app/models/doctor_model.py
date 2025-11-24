@@ -1,8 +1,6 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer
-
-class Base(DeclarativeBase):
-    pass
+from ..utils.db_connection import Base
 
 class Doctor(Base):
     __tablename__ = "doctors"
@@ -12,5 +10,3 @@ class Doctor(Base):
     surname: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    logs = relationship("Log", back_populates="doctor", lazy="joined")

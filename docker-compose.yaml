@@ -38,5 +38,20 @@ services:
       - ./backend/authentication:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  audit_service:
+    build:
+      context: ./backend/audit
+    container_name: audit_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend/audit:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 volumes:
   pgdata:
