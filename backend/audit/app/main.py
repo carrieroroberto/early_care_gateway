@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from .routers.authentication_routes import router as authentication_router
+from .routers.audit_routes import router as audit_router
 
-app = FastAPI(title="Authentication")
+app = FastAPI(title="Audit")
 
-app.include_router(authentication_router)
+app.include_router(audit_router)
