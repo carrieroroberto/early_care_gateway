@@ -13,11 +13,6 @@ class LogRepository(ILogRepository):
         logs = result.scalars().all()
         return logs if logs else None
 
-    async def find_by_patient_cf(self, patient_cf: str) -> List[Log] | None:
-        result = await self.session.execute(select(Log).where(Log.patient_hashed_cf == patient_cf))
-        logs = result.scalars().all()
-        return logs if logs else None
-
     async def save(self, log: Log) -> Log:
         self.session.add(log)
         await self.session.commit()
