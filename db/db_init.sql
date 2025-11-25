@@ -18,6 +18,11 @@ CREATE TABLE logs (
     report_id INTEGER
 );
 
+INSERT INTO doctors (name, surname, email, hashed_password) VALUES
+('Roberto', 'Carriero', 'roberto.carriero@email.com', 'hashedpassword1'),
+('Luca', 'Cianci', 'luca.cianci@email.com', 'hashedpassword2'),
+('Luca', 'Serio', 'luca.serio@email.com', 'hashedpassword3');
+
 INSERT INTO logs (service, event, description, doctor_id, patient_hashed_cf, data_id, report_id) VALUES
 ('authentication', 'register_success', 'doctor registered successfully', NULL, NULL, NULL, NULL),
 ('authentication', 'register_fail', 'email already used', NULL, NULL, NULL, NULL),

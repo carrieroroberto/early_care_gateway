@@ -1,24 +1,41 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Analysis from './pages/Analysis';
+import Layout from './components/Layout';
+
+// Questo componente serve a proteggere le pagine.
+// Se non hai il token, ti rispedisce al Login.
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('jwt_token');
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <Router>
+      <Routes>
+        {/* Pagina Pubblica: Login */}
+        <Route path="/" element={<Login />} />
+        
+        {/* Pagine Protette (Dashboard) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          {/* Quando vai su /dashboard, carica Analysis al centro */}
+          <Route index element={<Analysis />} />
+        </Route>
+
+      </Routes>
+    </Router>
   );
 }
 
