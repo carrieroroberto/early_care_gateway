@@ -11,17 +11,20 @@ CREATE TABLE logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     service VARCHAR(50) NOT NULL,
     event VARCHAR(50) NOT NULL,
-    
+    description VARCHAR(100) NOT NULL,
     doctor_id INTEGER,
     patient_hashed_cf VARCHAR(255),
-    report_id INTEGER,
-    data_id INTEGER
+    data_id INTEGER,
+    report_id INTEGER
 );
 
-INSERT INTO logs (service, event, doctor_id, patient_hashed_cf, data_id, report_id) VALUES
-('Authentication', 'LOGIN_SUCCESS', 101, NULL, NULL, NULL),
-('Gateway', 'REQ_ANALYSIS', 101, 'RSSMRA80A01H501U', NULL, NULL),
-('Data_Processing', 'DATA_PROCESSED', 101, 'RSSMRA80A01H501U', 5005, NULL),
-('Explainable_AI', 'REPORT_SUCCESS', 101, 'RSSMRA80A01H501U', 5005, 9901),
-('Explainable_AI', 'REPORTS_VIEW', 101, NULL, NULL, NULL),
-('Explainable_AI', 'REPORTS_PATIENT_VIEW', 202, 'BNCLGU90B02F205Z', NULL, NULL);
+INSERT INTO logs (service, event, description, doctor_id, patient_hashed_cf, data_id, report_id) VALUES
+('authentication', 'register_success', 'doctor registered successfully', NULL, NULL, NULL, NULL),
+('authentication', 'register_fail', 'email already used', NULL, NULL, NULL, NULL),
+('authentication', 'login_success', 'doctor logged in successfully', 101, NULL, NULL, NULL),
+('authentication', 'login_fail', 'invalid credentials', 102, NULL, NULL, NULL),
+('data_processing', 'data_processed', 'processed data stored in the database', NULL, NULL, 5001, NULL),
+('data_processing', 'data_retrieved', 'processed data requested for analysis', NULL, NULL, 5001, NULL),
+('explainable_ai', 'analysis_completed', 'report saved in the database', NULL, NULL, NULL, 9001),
+('explainable_ai', 'reports_all', 'reports view required', 101, NULL, NULL, NULL),
+('explainable_ai', 'reports_patient', 'reports view required for a patient', 101, 'RSSMRA80A01H501U', NULL, NULL);

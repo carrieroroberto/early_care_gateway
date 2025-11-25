@@ -5,6 +5,7 @@ from datetime import datetime
 class CreateLogRequest(BaseModel):
     service: str = Field(..., min_length=1, max_length=50)
     event: str = Field(..., min_length=1, max_length=50)
+    description: str = Field(..., min_length=1, max_length=100)
     doctor_id: int | None = Field(None, ge=1)
     patient_hashed_cf: str | None = Field(None, min_length=1, max_length=255)
     report_id: int | None = Field(None)
@@ -15,16 +16,25 @@ class CreateLogResponse(BaseModel):
     log_id: int = Field(...)
     created_at: datetime = Field(...)
 
+class GetLogsRequest(BaseModel):
+    service: str | None = None
+    event: str | None = None
+    doctor_id: int | None = Field(None, ge=1)
+    patient_hashed_cf: str | None = None
+    report_id: int | None = Field(None, ge=1)
+    data_id: int | None = Field(None, ge=1)
+
 class LogItem(BaseModel):
     id: int
     service: str
     event: str
+    description: str
+    doctor_id: int | None
     patient_hashed_cf: str | None
     report_id: int | None
     data_id: int | None
     created_at: datetime
 
-class GetLogsByDoctorResponse(BaseModel):
+class GetLogsResponse(BaseModel):
     message: str = Field("Log(s) retrieved successfully")
-    doctor_id: int
     logs: List[LogItem] = Field(default_factory=list)
