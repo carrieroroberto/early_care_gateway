@@ -1,0 +1,16 @@
+# Ignora cartelle dei modelli e file pesanti
+models/
+*.pth
+*.joblib
+*.bin
+*.h5
+
+# Ignora file di sistema e python
+__pycache__/
+*.pyc
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+numpy<2.0
+torch
+torchvision
+transformers
+xgboost
+scikit-learn
+joblib
+pandas
+pillow
+python-dotenv
+google-generativeai
+grad-cam
+opencv-python-headless
+matplotlib
+shap
