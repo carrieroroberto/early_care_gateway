@@ -1,0 +1,35 @@
+@startuml
+
+interface IAuthenticationClient {
+  + register(data: RegisterRequest)
+  + login(data: LoginRequest) : TokenResponse
+  + validateToken(token: String) : String
+  + requestPasswordReset(data: ForgotPasswordRequest)
+  + resetPassword(data: ResetPasswordRequest)
+}
+interface IDataProcessingClient {
+  + processData(data: AnalyseRequest) : String
+}
+interface IExplainableAIClient {
+  + performAnalysis(dataId: String, mode: String) : DiagnosisReport
+  + getReports(doctorId: String, patientId: String) : List<ReportSummary>
+}
+
+class GatewayFacade {
+  - authClient: IAuthenticationClient
+  - dpClient: IDataProcessingClient
+  - xaiClient: IExplainableAIClient
+
+  + handleRegister(data: RegisterRequest)
+  + handleLogin(data: LoginRequest)
+  + handleAnalysis(data: AnalyseRequest, token: String, mode: String)
+  + handleGetReports(token: String, patientId: String)
+  + handleForgotPassword(data: ForgotPasswordRequest)
+  + handleResetPassword(data: ResetPasswordRequest)
+}
+
+GatewayFacade o-- "1" IAuthenticationClient
+GatewayFacade o-- "1" IDataProcessingClient
+GatewayFacade o-- "1" IExplainableAIClient
+
+@enduml

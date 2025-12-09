@@ -1,0 +1,56 @@
+@startuml
+
+interface IReportRepository {
+  + save(report: Report) : Report
+  + findByDoctor(doctorId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+}
+class ReportRepositoryImpl implements IReportRepository {
+  - dbConnection
+  + save(report: Report) : Report
+  + findByDoctor(doctorId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+}
+
+interface IAuditNotifier {
+  + notify(eventType: String, details: Map)
+}
+class AuditClient implements IAuditNotifier {
+  - httpClient
+  + notify(eventType: String, details: Map)
+}
+
+interface IProcessedDataClient {
+  + getProcessedData(dataId: String) : ProcessedData
+}
+
+interface IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+class ClassicMLStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+class MultimodalStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+class StrategyFactory {
+  + getStrategy(mode: String) : IAnalysisStrategy
+}
+
+class ExplainableAIService {
+  - reportRepo: IReportRepository
+  - auditNotifier: IAuditNotifier
+  - dataClient: IProcessedDataClient
+  - strategyFactory: StrategyFactory
+
+  + performAnalysis(dataId: String, mode: String) : DiagnosisReport
+  + getReports(doctorId: String, patientId: String) : list<ReportSummary>
+}
+
+ExplainableAIService o-- "1" IReportRepository
+ExplainableAIService o-- "1" IAuditNotifier
+ExplainableAIService o-- "1" IProcessedDataClient
+ExplainableAIService o-- "1" StrategyFactory
+ExplainableAIService ..> IAnalysisStrategy : uses
+
+@enduml

@@ -1,0 +1,54 @@
+@startuml
+
+interface IProcessedDataRepository {
+  + save(data: ProcessedData) : String
+}
+class DataRepositoryImpl implements IProcessedDataRepository {
+  - dbConnection
+  + save(data: ProcessedData) : String
+}
+
+interface IAuditNotifier {
+  + notify(eventType: String, details: Map)
+}
+class AuditClient implements IAuditNotifier {
+  - httpClient
+  + notify(eventType: String, details: Map)
+}
+
+interface IProcessingStep {
+  + setNext(step: IProcessingStep)
+  + handle(dataContext: DataContext)
+}
+abstract class BaseProcessingStep implements IProcessingStep {
+  - next: IProcessingStep
+  + setNext(step)
+  + handle(dataContext: DataContext)
+}
+class ValidationStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+class AnonymizationStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+class EnrichmentStep extends BaseProcessingStep {
+  + handle(dataContext: DataContext)
+}
+
+class DataProcessingService {
+  - repository: IProcessedDataRepository
+  - auditNotifier: IAuditNotifier
+  - chainHead: IProcessingStep
+ 
+  + processData(data: AnalyseRequest) : String
+  + getProcessedData(dataId: String) : ProcessedData
+}
+
+DataProcessingService o-- "1" IProcessedDataRepository
+DataProcessingService o-- "1" IAuditNotifier
+DataProcessingService o-- "1" IProcessingStep : (chainHead)
+
+ValidationStep o--> "1" AnonymizationStep : next
+AnonymizationStep o--> "1" EnrichmentStep : next
+
+@enduml

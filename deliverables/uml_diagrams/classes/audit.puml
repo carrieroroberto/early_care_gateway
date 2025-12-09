@@ -1,0 +1,18 @@
+@startuml
+
+interface ILogRepository {
+  + save(logEntry: LogEventRequest)
+}
+class LogRepositoryImpl implements ILogRepository {
+  - dbConnection
+  + save(logEntry: LogEventRequest)
+}
+
+class AuditService {
+  - logRepository: ILogRepository
+  + logEvent(data: LogEventRequest) 
+}
+
+AuditService o-- "1" ILogRepository
+
+@enduml
