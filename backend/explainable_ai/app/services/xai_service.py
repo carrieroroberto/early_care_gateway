@@ -62,9 +62,9 @@ class XAiService:
             patient_hashed_cf=analysis_request.patient_hashed_cf,
             processed_data_id=analysis_request.processed_data_id,
             strategy=analysis_request.strategy,
-            diagnosis=result.get("diagnosis"),
-            confidence=result.get("confidence"),
-            explanation=result.get("explanation")
+            diagnosis=result.get("diagnosis", "N/A"),
+            confidence=result.get("confidence", 0.0),
+            explanation=result.get("explanation", "N/A")
         )
 
         report = await self.reports_repository.save(report)
