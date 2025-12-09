@@ -1,0 +1,41 @@
+@startuml
+
+actor Doctor
+participant "UI" as UI
+participant "Gateway" as Gateway
+participant "Authentication" as AuthService
+participant "Data Processing" as DataService
+participant "Explainable AI" as AIService
+participant "Audit" as AuditService
+database "Doctors DB" as DoctorsDB
+database "Reports DB" as ReportsDB
+database "Processed Data DB" as NoSQLDB
+database "Audit DB" as AuditDB
+
+Doctor -> UI : Submit data for diagnosis
+UI -> Gateway : Send data, JWT
+Gateway -> AuthService : Validate JWT
+AuthService -> DoctorsDB : Query doctor ID
+
+alt JWT valid
+    Gateway -> DataService : Call raw data processing
+    DataService -> NoSQLDB : Write processed data
+    DataService -> AuditService : Log processing event
+    AuditService -> AuditDB : Write event log
+    DataService --> Gateway : Return processed data ID
+    Gateway -> AIService : Call diagnosis generation (data ID, mode)
+    AIService -> NoSQLDB : Read processed data
+    AIService -> AIService : Execute AI strategy
+    AIService -> ReportsDB : Write report
+    AIService -> AuditService : Log AI event
+    AuditService -> AuditDB : Write event log
+    AIService --> Gateway : Return report
+    Gateway --> UI : Send diagnosis
+else JWT invalid
+    AuthService --> Gateway : Return error
+    Gateway --> UI : Send error message
+end
+
+UI --> Doctor : Shows diagnosis/error
+
+@enduml

@@ -1,0 +1,115 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{margin=1in}
+
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{keywordcolor}{rgb}{0.36,0.54,0.66}
+
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+}
+
+\title{Early Care Gateway}
+\author{Execution Instructions}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Prerequisites}
+Before running the project, ensure the following tools are installed on your system:
+
+\begin{itemize}
+    \item \textbf{Git}: Clone the repository
+    \item \textbf{Python 3}: Generate the JWT secret key
+    \item \textbf{Docker + Docker Compose V2}: Build images and deploy multi-container system
+\end{itemize}
+
+\noindent
+Check versions to ensure installation:
+\begin{lstlisting}[language=bash]
+python --version
+docker --version
+docker-compose --version
+git --version
+\end{lstlisting}
+
+\section{Quickstart}
+
+\subsection{1. Clone the repository}
+\begin{lstlisting}[language=bash]
+git clone https://github.com/carrieroroberto/early_care_gateway.git
+cd early_care_gateway
+\end{lstlisting}
+
+\subsection{2. Configure environment variables}
+The file \texttt{.env.example} is only a template of the environment configuration used by the system (original \texttt{.env} file should not be shared as a security best practice).  
+
+You should either rename it to \texttt{.env} or create a new \texttt{.env} file with the correct values for your setup.
+
+\subsubsection{Generate a secret key}
+If you have Python installed locally, you can generate a secure secret key with the following command:
+
+\begin{lstlisting}[language=bash]
+python secret_key_generator.py
+\end{lstlisting}
+Then, copy the generated key into your \texttt{.env} file under \texttt{SECRET\_KEY}.
+
+\subsubsection{Example .env configuration}
+\begin{lstlisting}
+POSTGRES_HOST=postgres
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=postgres
+POSTGRES_PORT=5432
+
+PGADMIN_EMAIL=admin@admin.com
+PGADMIN_PASSWORD=admin
+
+SECRET_KEY=123456789abcdefgh
+\end{lstlisting}
+
+\subsection{3. Run the project}
+Start the project using Docker Compose:
+
+\begin{lstlisting}[language=bash]
+docker-compose up --build
+\end{lstlisting}
+
+\noindent
+This command will:
+\begin{itemize}
+    \item Build all Docker images (Backend, Frontend, Databases)
+    \item Start the containers
+    \item Link services for communication across networks and volumes
+\end{itemize}
+
+\subsection{4. Use the system}
+\begin{itemize}
+    \item Browse at http://localhost:3000 to try the system.
+\end{itemize}
+
+\section{Troubleshooting}
+\begin{itemize}
+    \item Monitor the logs in the terminal to ensure that all services have been initialized without errors.
+    \item Ensure that no other services are running on the ports used by the system to avoid conflicts.
+    \item If Docker images fail to build, try stopping and removing existing containers with \texttt{docker-compose down}, then rebuild with \texttt{docker-compose up --build}.
+    \item On Linux systems, Docker commands may require \texttt{sudo}.
+    \item Access pgAdmin at \texttt{http://localhost:8080} using the credentials defined in your \texttt{.env} file to manage the database in a user-friendly interface.
+\end{itemize}
+
+\end{document}

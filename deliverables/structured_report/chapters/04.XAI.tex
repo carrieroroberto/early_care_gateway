@@ -1,0 +1,83 @@
+\chapter{AI Solutions and Explainability}
+
+This chapter presents the Artificial Intelligence solutions integrated into the project and describes how the system ensures interpretability through dedicated Explainable AI mechanisms. The architecture follows a multimodal diagnostic approach, combining textual, imaging, signal-based, and structured data while maintaining a high degree of modularity through the Swappable AI paradigm. The goal is to provide robust, clinically grounded analyses while retaining the transparency and reliability required in healthcare contexts. At the end, a summary is presented in Table \ref{tab:xai}
+
+\section{Textual Analysis}
+
+Medical narratives, triage descriptions, and annotations represent a rich source of information but require advanced Natural Language Processing (NLP) techniques to be effectively interpreted. The system adopts transformer-based language models specifically tailored for the medical domain to extract relevant features, detect symptoms, and infer clinical conditions from raw text.
+
+\subsection{Bidirectional Encoder Representations Transformers (BERT)}
+
+At the core of textual analysis lies a domain-specialized version of BERT, known as ClinicalBERT. Built on the transformer architecture that introduced bidirectional attention mechanisms, BERT enables contextual understanding of medical terminology, abbreviations, and structured clinical expressions. ClinicalBERT is pretrained on biomedical corpora and hospital notes, allowing it to capture semantic relations typical of clinical narratives~\cite{alsentzer-etal-2019-publicly}.
+
+Through the Swappable AI mechanism, ClinicalBERT can be seamlessly replaced with more advanced transformer models if required, without modifying the interface exposed to the rest of the system. This design guarantees extensibility, maintainability, and adaptability to future improvements in biomedical NLP research.
+
+\section{Imaging and Signals Analysis}
+
+Visual and signal-based data represent a crucial component in modern diagnostic workflows. The system integrates both classical deep learning approaches for medical imaging and more general-purpose Large Language Models that extend multimodal reasoning to unstructured datasets and physiological signals.
+
+\subsection{Convolutional Neural Networks (CNN)}
+
+The imaging pipeline incorporates Convolutional Neural Networks, which remain the state-of-the-art for medical image processing. Among the integrated architectures, CheXNet provides strong performance on thoracic image analysis tasks such as pneumonia detection, while EfficientNet delivers competitive accuracy with lower computational cost, making it well-suited for containerized deployments ~\cite{rajpurkar2017chexnetradiologistlevelpneumoniadetection, Koonce2021}.
+
+These networks are optimized for chest X-ray interpretation but can be extended to additional modalities by retraining or fine-tuning their final layers. CNN-based inference is encapsulated within the Swappable AI layer, supporting modularity and model replacement without altering the system’s external interfaces.
+
+\subsection{Large Language Models (LLM)}
+
+To process inputs that go beyond images—such as multimodal signals, combined textual-instruction inputs, or waveform-derived data—the system integrates the Google Gemini API. Gemini operates as a unified Large Language Model capable of interpreting heterogeneous data types and performing context-aware reasoning~\cite{10602253}.
+
+By leveraging its multimodal capabilities, the system can analyze signals such as ECG traces (provided in numerical or encoded format), correlate them with textual information, and generate clinically coherent diagnostic suggestions. The LLM is also responsible for producing structured outputs and supporting reasoning tasks that benefit from contextual understanding.
+
+\section{Structured Data Analysis}
+
+Structured attributes such as vital parameters, demographic information, or tabular laboratory values remain essential for clinical assessment, especially in emergency contexts. These data types typically require specialized machine learning algorithms optimized for tabular decision-making.
+
+\subsection{Gradient Boosting (GB)}
+
+The system employs XGBoost, a high-performance Gradient Boosting algorithm widely used in the medical domain for its robustness, interpretability, and efficiency. XGBoost handles missing values gracefully, computes feature importance natively, and provides highly consistent results across heterogeneous datasets~\cite{chen2015xgboost}.
+
+Its integration supports fast triage-oriented predictions, particularly when tabular risk indicators are involved. Moreover, XGBoost is natively compatible with SHAP, enabling transparent and mathematically grounded explanations of its predictions.
+
+\section{Explanations}
+
+Explainability is a foundational requirement for \textit{EarlyCare Gateway}. Given the safety-critical nature of medical decision support, models must not only provide accurate predictions but also justify them in a clear and clinically meaningful way. The system incorporates both post-hoc and intrinsic explanation strategies to maximize transparency across all AI components.
+
+\subsection{SHapley Additive exPlanations (SHAP)}
+
+SHAP is adopted as the primary post-hoc explanation technique for tabular and classical machine learning models. Based on Shapley values from cooperative game theory, SHAP quantifies the contribution of each feature to the final prediction.
+
+This mechanism supports both global and local interpretability. Local explanations highlight which factors influenced a specific prediction, while global explanations provide insights into overall model behavior and feature importance trends~\cite{mosca-etal-2022-shap}.
+
+These explanations are essential for clinical auditing, regulatory compliance, and enhancing the trust of healthcare professionals in algorithmic outputs.
+
+\subsection{Chain of Thought (CoT)}
+
+Large Language Models employed in the system produce intrinsic explanations through Chain of Thought prompting. CoT encourages the model to articulate intermediate reasoning steps rather than providing only the final answer. This technique yields transparent, human-readable diagnostic justifications that emulate clinical reasoning processes~\cite{NEURIPS2022_9d560961}.
+
+In a healthcare setting, CoT serves several purposes, such as increasing interpretability of LLM-based assessments, allowing doctors to verify reasoning consistency, and supporting documentation tasks within triage workflows.
+
+Together, SHAP and CoT form a comprehensive XAI framework that spans all model categories integrated within the EarlyCare Gateway system, ensuring trustworthy, and diagnostic support.
+
+\begin{table}[H]
+\centering
+\caption{Summary of AI Models by Data Type and Explainability Techniques}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\raggedright\arraybackslash}m{4cm}|
+                >{\raggedright\arraybackslash}m{4.5cm}|
+                >{\raggedright\arraybackslash}m{4.5cm}|}
+\hline
+\centering \textbf{Data Type} & \centering \textbf{AI Model} & \centering \textbf{Explainability} \tabularnewline
+\hline
+Textual Data & ClinicalBERT (NLP) & Chain of Thought\tabularnewline
+\hline
+Medical Imaging & CheXNet (CNN) & SHAP \tabularnewline
+\hline
+Medical Imaging & EfficientNet (CNN) & SHAP \tabularnewline
+\hline
+Signals and Extra-Imaging Data & Gemini API (LLM) & Chain of Thought\tabularnewline
+\hline
+Structured Data & XGBoost (GD) & SHAP \tabularnewline
+\hline
+\end{tabular}
+\label{tab:xai}
+\end{table}
