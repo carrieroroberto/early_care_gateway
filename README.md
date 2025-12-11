@@ -8,73 +8,118 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)
 
-**Early Care Gateway** is a gateway that routes clinical data to provide medical decision support.  
-The system leverages a **Explainable AI** models to filter, predict, and explain diseases and pathologies based on the medical domain.  
-Special emphasis is placed on **privacy**, **traceability**, and **response times**.
+A Microservice Architecture for Clinical Decision Support with Explainable AI.
+
+EarlyCare Gateway is a web system designed to optimize triage and preliminary diagnosis workflows. Built on a microservices architecture, the system analyzes multimodal data (text, images, signals, and structured records) providing predictions supported by Explainable AI (XAI) insights.
+
+*Note: This system is designed exclusively for professional use by authorized medical personnel to prevent risks associated with self-diagnosis.*
 
 ---
 
 ## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Quickstart](#quickstart)
-- [Troubleshooting](#troubleshooting)
+- [System Overview](#systemoverview)
+- [Getting Started](#gettingstarted)
 
 ---
+## System Overview
 
-## Prerequisites
+<div align="center">
+  <img width="650" alt="architecture" src="https://github.com/user-attachments/assets/090e92bb-fedb-4a7a-9c0d-a5096e4681ce" />
+</div>
 
-Before running the project, make sure the following tools are installed:
+### Key Features
+- **Microservices Architecture:** A modular and scalable system comprising independent services for Authentication, Data Processing, AI, Audit, and Gateway, all orchestrated via Docker Compose.
+- **Multimodal AI Analysis:**
+    - **Text:** Clinical note classification using ClinicalBERT (fine-tuned) and clinical reasoning via LLM (Gemini 2.5 Flash).
+    - **Imaging:** Chest X-Ray analysis with CheXNet (DenseNet) and skin lesion diagnosis with EfficientNet.
+    - **Structured Data:** Cardiovascular risk assessment using XGBoost.
+    - **Signals (ECG):** Anomaly detection via LLM analysis.
+- **Explainable AI (XAI):** The system explains every diagnosis using SHAP (feature importance), Grad-CAM (visual heatmaps), and Chain of Thought (natural language reasoning).
+- **Security & Privacy:** Implements JWT authentication, password hashing, and patient data anonymization (hashing identifiers before processing).
+- **Audit Trail:** Asynchronous and immutable logging of all operations to ensure full clinical traceability.
 
-- **Git:** Clone the repository
+### Performance Highlights
+The system has been validated on public datasets (*MIMIC-III, ChestX-ray, HAM10000, UCI Heart Disease*) with promising results:
+- **Chest X-Ray:** Mean AUC 0.837.
+- **Skin Lesions:** Accuracy 88% (Melanoma Recall 73%).
+- **Textual Analysis:** Accuracy 88%.
+- **Cardiac Risk:** Accuracy 82.1%.
+
+### Tech Stack
+- **Backend:** Python, FastAPI.
+- **AI & Data Science:** PyTorch, Hugging Face Transformers, Scikit-Learn, XGBoost, Pandas, Google Gemini API.
+- **Database:** PostgreSQL (with Repository Pattern).
+- **Containerization & Deployment:** Docker, Docker Compose.
+- **Testing:** Pytest
+
+## Getting Started
+
+### Prerequisites
+
+Prior to running the project, ensure that your system meets the following software and hardware requirements:
+
 - **Python 3:** Generate the JWT secret key
-- **Docker + Docker Compose V2:** Build images and deploy multi-container system
+- **Pip:** Install testing dependencies
+- **Docker (and WSL for Windows):** Build containers
+- **Docker Compose V2:** Deploy the multi-container system
+- **Git:** Clone the repository
+- **At least 2 GB of Disk Space:** Host AI models and system components
+- **Recommended at least 8 GB RAM:** Ensure stable execution
 
 Check versions:
 
 ```bash
-python --version
-docker --version
-docker-compose --version
-git --version
+git -- version
+python -- version
+pip -- version
+wsl -- version # Windows only
+docker -- version
+docker compose version
 ```
 
-## Quickstart
+### Quickstart
 
 **1. Clone the repository**
 
-    git clone https://github.com/carrieroroberto/early_care_gateway.git
+    git clone https://github.com/carrieroroberto/early_care_gateway
     cd early_care_gateway
 
 **2. Configure environment variables**
 
-The file *.env.example* is only a template of the environment configuration used by the system (not pushed on GitHub as a security best practice). You should either rename it to *.env* or create a new file with the correct values.
+The file *.env.example* serves as a template for the environment configuration required by the system. Rename it to *.env*, or create a new *.env* file and fill it with the correct values for your setup (e.g. database user and password).
 
-**Generate a secret key**
+**Generate keys**
 
-If you have Python installed locally:
+If Python is installed on your machine, you can generate a secure SHA256 secret key using:
 
     python secret_key_generator.py
 
-Copy the generated key into your *.env* file under *SECRET_KEY*.
+Copy the generated key and paste it into your *.env* file under *SECRET KEY*. If you already have a Gemini API key, place it under *GOOGLE API KEY*. Otherwise, you can obtain a free API key by visiting [Google AI Studio](https://aistudio.google.com/app/api-keys). After logging in and creating a project, you will be able to generate your personal API key.
 
 **Example .env configuration**
 
-    POSTGRES_HOST=postgres
-    POSTGRES_USER=postgres_user
-    POSTGRES_PASSWORD=postgres_password
-    POSTGRES_DB=db_name
-    POSTGRES_PORT=5432
+    POSTGRES_HOST = postgres
+    POSTGRES_USER = earlycaregateway
+    POSTGRES_PASSWORD = your_password
+    POSTGRES_DB = earlycaregateway
+    POSTGRES_PORT = 5432
+    
+    PGADMIN_EMAIL = admin@earlycaregateway.com
+    PGADMIN_PASSWORD = your_password
+    
+    SECRET_KEY = 123456789 abcdefgh
+    GOOGLE_API_KEY = your_key
+    
+    GATEWAY_URL = http://gateway:8000/gateway
+    AUTHENTICATION_URL = http://auth_service:8000/authentication
+    DATA_PROCESSING_URL = http://data_service:8000/data_processing
+    EXPLAINABLE_AI_URL = http://xai_service:8000/explainable_ai
+    AUDIT_URL = http://audit_service:8000/audit
 
-    PGADMIN_EMAIL=pgadmin_email
-    PGADMIN_PASSWORD=pgadmin_password
+**3. Run the system**
 
-    SECRET_KEY=generated_secret_key_here
-
-**3. Run the project**
-
-Start the project using Docker Compose:
+You can start the system using the *run.bat* (Windows) or *run.sh* (macOS/Linux) scripts, that automatically launch the services and run automated tests. Alternatively, you may manually start the system with:
 
     docker-compose up --build
 
@@ -83,18 +128,21 @@ This will:
 - Start all containers
 - Link services for communication
 
-**Optional: Verify the setup**
+**4. Use the system**
 
-- Monitor the logs in the terminal to ensure that all services have been initialized without errors.
-- Access pgAdmin using the credentials in your *.env* to manage the database in a user-friendly interface.
+Access the web application at: *http://localhost:3000*.
+You may also use an API client, such as Postman, to interact directly with the API endpoints following the provided documentation.
 
-## Troubleshooting
+### Troubleshooting
 
-Ensure that no other services are running on the ports used by the system to avoid conflicts.
+- Monitor logs to verify that all services start correctly:
 
-If Docker images fail to build, stop and remove existing containers:
+      docker compose logs -f
+  
+- Ensure no other applications are using ports required by the system.
+- If Docker images fail to build, try stopping and removing existing containers and volumes using:
 
-    docker-compose down
-    docker-compose up --build
-
-On Linux systems, Docker commands may require sudo.
+      docker compose down -v
+  
+- On Linux systems, Docker commands may require sudo.
+- Access pgAdmin at *http://localhost:8080* using the credentials provided in your *.env* file.
