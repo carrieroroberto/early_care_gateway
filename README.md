@@ -108,7 +108,7 @@ Copy the generated key and paste it into your *.env* file under *SECRET KEY*. If
     PGADMIN_EMAIL = admin@earlycaregateway.com
     PGADMIN_PASSWORD = your_password
     
-    SECRET_KEY = 123456789abcdefgh
+    SECRET_KEY = your_secret_key
     GOOGLE_API_KEY = your_key
     
     GATEWAY_URL = http://gateway:8000/gateway
