@@ -1,3 +1,4 @@
+from fastapi import APIRouter, Depends, HTTPException, Query
 # Import schemas for request and response models related to authentication and XAI analysis
 from ..schemas.auth_schema import RegisterResponse, RegisterRequest, LoginResponse, LoginRequest
 from ..schemas.xai_schema import AnalyseResponse, AnalyseRequest, GetReportsResponse

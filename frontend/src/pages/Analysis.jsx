@@ -7,26 +7,17 @@ import {
 } from 'lucide-react';
 
 const Analysis = () => {
-  // --- States ---
   const [activeTab, setActiveTab] = useState('text'); 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  //Input States
   const [textInput, setTextInput] = useState('');
   const [signalInput, setSignalInput] = useState(''); 
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [imageType, setImageType] = useState('chest_xray');
 
-
-  //Numeric Data State including all the features used for evaluation
-  const [cardioData, setCardioData] = useState({
-    age: '', sex: '1', cp: '0', trestbps: '', chol: '',
-    fbs: '0', restecg: '0', thalach: '', exang: '0',
-    oldpeak: '', slope: '1', ca: '0', thal: '1'
-  });
-
+  const [cardioData, setCardioData] = useState([]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -36,7 +27,7 @@ const Analysis = () => {
     }
   };
 
-  const convertBase64 = (file) => {   //Used to convert images according to Base64
+  const convertBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
@@ -45,7 +36,6 @@ const Analysis = () => {
     });
   };
 
-  // --- Analysis handling ---
   const handleAnalyze = async () => {
     setLoading(true);
     setResult(null);
@@ -54,14 +44,12 @@ const Analysis = () => {
       let rawDataString = ""; 
       let strategy = "";
 
-      // Text -> Backend key: "text"
       if (activeTab === 'text') {
         if (!textInput) throw new Error("Please enter clinical notes.");
         rawDataString = textInput;
         strategy = "text"; 
       } 
       
-      // Image -> Backend keys: "img_rx" o "img_skin"
       else if (activeTab === 'image') {
         if (!selectedFile) throw new Error("Please upload an image.");
         rawDataString = await convertBase64(selectedFile);
@@ -73,7 +61,6 @@ const Analysis = () => {
         }
       } 
       
-      // Numeric -> Backend key: "numeric"
       else if (activeTab === 'numeric') {
          const numericArray = [
           parseInt(cardioData.age) || 0,        // 1. age
@@ -94,7 +81,6 @@ const Analysis = () => {
         strategy = "numeric";
       }
       
-      // Signal -> Backend key: "signal"
       else if (activeTab === 'signal') {
         if (!signalInput) throw new Error("Please enter signal data.");
         
@@ -107,7 +93,6 @@ const Analysis = () => {
         rawDataString = JSON.stringify(arr); 
         strategy = "signal";
       }
-
 
       const payload = {
         patient_hashed_cf: "TEST_PATIENT_CF_123", 
@@ -134,15 +119,14 @@ const Analysis = () => {
       
       <div>
         <h1 className="text-3xl font-bold text-gray-800">Diagnostic Hub</h1>
-        <p className="text-gray-500">Multimodal Clinical Decision Support System</p>
+        <p className="text-gray-500 mt-2">AI Clinical Decision Support System</p>
       </div>
 
-      {/* --- TAB MENU --- */}
       <div className="flex gap-2 border-b border-gray-200 pb-1 overflow-x-auto">
         {[
-          { id: 'text', label: 'Symptoms (NLP)', icon: FileText },
+          { id: 'text', label: 'Symptoms', icon: FileText },
           { id: 'image', label: 'Imaging (X-Ray/Skin)', icon: Image },
-          { id: 'numeric', label: 'Cardio Risk (Tabular)', icon: Activity },
+          { id: 'numeric', label: 'Cardio Risk', icon: Activity },
           { id: 'signal', label: 'ECG Signal', icon: BarChart2 },
         ].map((tab) => (
           <button
@@ -161,10 +145,8 @@ const Analysis = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* --- INPUT AREA --- */}
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           
-          {/* TEXT INPUT */}
           {activeTab === 'text' && (
             <div className="space-y-4">
               <label className="font-bold text-gray-700">Patient Symptoms</label>
@@ -177,11 +159,9 @@ const Analysis = () => {
             </div>
           )}
 
-          {/* IMAGE INPUT */}
           {activeTab === 'image' && (
             <div className="space-y-6">
-              
-              {/* Image type selector */}
+            
               <div>
                 <label className="block font-bold text-gray-700 mb-3">Select Image Type</label>
                 <div className="grid grid-cols-2 gap-4">
@@ -211,7 +191,6 @@ const Analysis = () => {
                 </div>
               </div>
 
-              {/* Upload area */}
               <div>
                 <label className="block font-bold text-gray-700 mb-2">
                   Upload {imageType === 'chest_xray' ? 'X-Ray' : 'Dermatoscopy'} Image
@@ -234,7 +213,6 @@ const Analysis = () => {
             </div>
           )}
 
-          {/* NUMERIC INPUT */}
           {activeTab === 'numeric' && (
             <div className="space-y-4">
               <h3 className="font-bold text-gray-700 border-b pb-2">Clinical Parameters</h3>
@@ -282,7 +260,6 @@ const Analysis = () => {
             </div>
           )}
 
-          {/* Input signal */}
           {activeTab === 'signal' && (
             <div className="space-y-4">
               <label className="font-bold text-gray-700">ECG Signal Data (CSV Format)</label>
@@ -303,7 +280,6 @@ const Analysis = () => {
           </div>
         </div>
 
-        {/* --- OUTPUT AREA --- */}
         <div className="lg:col-span-1">
           {result ? (
             <div className="bg-white rounded-xl shadow-lg border-t-4 border-teal-500 overflow-hidden animate-slide-up">
@@ -315,7 +291,6 @@ const Analysis = () => {
 
               <div className="p-6 space-y-6">
                 
-                {/* 1. TESTO */}
                 {result.macro_category && (
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase">Classification</span>
@@ -324,7 +299,6 @@ const Analysis = () => {
                   </div>
                 )}
 
-                {/* 2. IMMAGINE (RX o Pelle) */}
                 {(result.primary_finding || result.diagnosis) && (
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase">Finding</span>
@@ -350,7 +324,6 @@ const Analysis = () => {
                   </div>
                 )}
 
-                {/* Cardiology */}
                 {result.risk_level && (
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase">Risk Level</span>
@@ -361,7 +334,6 @@ const Analysis = () => {
                   </div>
                 )}
 
-                {/* Signal */}
                 {result.analysis && !result.risk_level && !result.macro_category && (
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase">Analysis</span>
@@ -369,7 +341,6 @@ const Analysis = () => {
                   </div>
                 )}
 
-                {/* XAI */}
                 {(result.xai_explanation || result.xai_explanation_text) && (
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 mt-4">
                     <div className="flex items-center gap-2 mb-2 text-amber-700">
@@ -395,7 +366,6 @@ const Analysis = () => {
     </div>
   );
 };
-
 
 const InputGroup = ({ label, type = "text", val, setter, step }) => (
   <div>

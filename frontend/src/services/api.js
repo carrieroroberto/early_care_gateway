@@ -1,7 +1,7 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
 
-const GATEWAY_URL = process.env.REACT_APP_GATEWAY_URL || "http://localhost:8000/gateway";
+const GATEWAY_URL = "http://localhost:8002/gateway";
 
 const api = axios.create({
   baseURL: GATEWAY_URL,

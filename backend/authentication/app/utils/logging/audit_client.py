@@ -35,4 +35,4 @@ class AuditClient(IObserver):
         except Exception as e:
             # Log an error message to the console if the request fails
             # (Does not raise the exception to prevent blocking the main auth flow)
-            print(f"Failed to send log to Audit Service: {e}")s
+            print(f"Failed to send log to Audit Service: {e}")
