@@ -1,42 +1,43 @@
 services:
   postgres:
-    image: postgres:15
-    restart: always
+    image: postgres:15              # PostgreSQL database server
+    restart: always                 # Automatically restart if the container stops
     env_file:
-      - .env
+      - .env                        # Load environment variables from .env
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT}:5432"     # Expose database port (host:container)
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data        # Persistent DB storage
+      - ./db:/docker-entrypoint-initdb.d       # Init scripts (SQL executed at startup)
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:latest    # Web-based PostgreSQL administration tool
     restart: always
     env_file:
-      - .env
+      - .env                        # Load PGADMIN credentials
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "8080:80"
+      - "8080:80"                   # pgAdmin UI available on localhost:8080
     depends_on:
-      - postgres
+      - postgres                    # Start only after PostgreSQL
 
   auth_service:
     build:
-      context: ./backend/authentication
+      context: ./backend/authentication       # Build Auth service from this folder
     container_name: auth_service
     restart: always
     env_file:
-      - .env
+      - .env                                  # Load environment variables
     depends_on:
-      - postgres
+      - postgres                              # Requires database connection
     ports:
-      - "8000:8000"
+      - "8000:8000"                           # Expose service
     volumes:
-      - ./backend/authentication:/app
+      - ./backend/authentication:/app         # Live-reload source code
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # FastAPI server with auto-reload enabled for development
 
   audit_service:
     build:
@@ -52,6 +53,7 @@ services:
     volumes:
       - ./backend/audit:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Audit microservice
 
   xai_service:
     build:
@@ -67,7 +69,8 @@ services:
     volumes:
       - ./backend/explainable_ai:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    
+    # Explainable AI microservice (XAI)
+
   data_service:
     build:
       context: ./backend/data_processing
@@ -82,6 +85,7 @@ services:
     volumes:
       - ./backend/data_processing:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Data processing microservice
 
   gateway:
     build:
@@ -91,25 +95,27 @@ services:
     env_file:
       - .env
     ports:
-      - "8002:8000"
+      - "8002:8000"                          # API gateway exposed on port 8002
     volumes:
       - ./backend/gateway:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Central gateway for routing requests across microservices
 
   ui:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile                 # Build using frontend Dockerfile
     container_name: ui
     ports:
-      - "3000:3000"
+      - "3000:3000"                          # React app available at localhost:3000
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app                      # Live-reload React source
       - frontend_node_modules:/app/node_modules
     environment:
-      - REACT_APP_API_URL=${GATEWAY_URL}
+      - REACT_APP_API_URL=${GATEWAY_URL}     # Inject API gateway URL into React environment
     command: npm start
+    # Start development server with hot reload
 
 volumes:
-  pgdata:
-  frontend_node_modules:
+  pgdata:                 # Persistent volume storing PostgreSQL database
+  frontend_node_modules:  # Keeps node_modules persistent and avoids permission issues
