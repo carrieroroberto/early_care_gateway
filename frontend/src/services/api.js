@@ -1,69 +1,54 @@
-import axios from 'axios';
+import axios from "axios";
+import CryptoJS from "crypto-js";
 
-const MAIN_URL = 'http://localhost:8000';  //Port for authentication and analysis
-const PROCESSOR_URL = 'http://localhost:8001';    //Port for preprocessing
+const GATEWAY_URL = process.env.REACT_APP_GATEWAY_URL || "http://localhost:8000/gateway";
 
 const api = axios.create({
-  baseURL: MAIN_URL,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: GATEWAY_URL,
+  headers: { "Content-Type": "application/json" },
 });
 
-const processorApi = axios.create({
-  baseURL: PROCESSOR_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// --- Token handling ---
-const addToken = (config) => {
-  const token = localStorage.getItem('jwt_token');  //Searches the jwt token in local memory
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("jwt_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
+});
+
+export const hashPatientCf = (patientCf) => {
+  if (!patientCf) return "";
+  return CryptoJS.SHA256(patientCf.toUpperCase()).toString(CryptoJS.enc.Hex);
 };
-
-api.interceptors.request.use(addToken);
-processorApi.interceptors.request.use(addToken);
-
-// --- API functions ---
 
 export const authAPI = {
-  login: (credentials) => api.post('/authentication/login', credentials),  //Sends credentials to login 
-  register: (data) => api.post('/authentication/register', data),   //Sends whole data to register
+  login: (credentials) => api.post("/login", credentials),
+  register: (data) => api.post("/register", data),
 };
 
-export const runDiagnosticWorkflow = async (dataType, rawData, targetModel = 'local') => {
+export const aiAPI = {
+  analyse: (payload) => api.post("/analyse", payload),
+};
+
+export const reportsAPI = {
+  getAll: (patientCf = "") => {
+    const params = patientCf ? { patient_hashed_cf: hashPatientCf(patientCf) } : {};
+    return api.get("/reports", { params });
+  },
+};
+
+export const runDiagnosticWorkflow = async (rawData, strategy, patientCf = "test_patient_cf") => {
   try {
-    console.log("🚀 STEP 1: Preprocessing the data, sending them to the Processor...", { dataType, targetModel });   
-    
-    const processRes = await processorApi.post('/process', {   //This blocks send raw data to the processor
-      data_type: dataType,        
-      patient_id: "User-Session", 
-      raw_data: rawData,         
-      target_model: targetModel  
-    });
+    const hashedCf = hashPatientCf(patientCf);
 
-    const cleanPayload = processRes.data.payload;   //We received the cleaned data
-    console.log("✅ STEP 1 Completed. Processed payload has been received.");
+    const payload = {
+      patient_hashed_cf: hashedCf,
+      strategy,
+      raw_data: rawData,
+    };
 
-    console.log("🚀 STEP 2: Sending to AI Brain...");   //After processing we need to analyze
-    
-    const aiRes = await api.post('/predict', {   //Sending cleaned data to AI
-      type: dataType, 
-      data: cleanPayload   ///cleaned
-    });
-
-    console.log("✅ STEP 2 Completed. Diagnosis received.");
-    return aiRes.data;
-
+    const response = await api.post("/analyse", payload);
+    return response.data.report;
   } catch (error) {
-    console.error("❌ An error occured during AI Workflow:", error);
     throw error;
-  }
-};
-
-export const reportsAPI = {   //Used for reports
-  getAll: (patientId) => {  //List of reports saved in the db
-    const params = patientId ? { patient_id: patientId } : {};
-    return api.get('/reports', { params });
   }
 };
 

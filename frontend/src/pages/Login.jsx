@@ -1,32 +1,32 @@
-//Handle login and registration
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
-import { Activity, Lock, Mail, UserPlus, LogIn, User } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authAPI } from "../services/api";
+import { Activity, Lock, Mail, UserPlus, LogIn, User } from "lucide-react";
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);   //If this var is true then it shows welcome back
-  const [formData, setFormData] = useState({ name: '', surname: '', email: '', password: '' });   //Form to registrate
-  const [error, setError] = useState('');  //If login fails then it this will be the error
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({ name: "", surname: "", email: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();   //Don't refresh
-    setError('');   //Cleans previous errors
+    e.preventDefault();
+    setError("");
     
     try {
-      if (isLogin) {   //The user wants to login
-        const res = await authAPI.login({ email: formData.email, password: formData.password });   //Calls the function in api.js to POST in backend. It sends email and password as payload
-        localStorage.setItem('jwt_token', res.data.token);   //It saves the token taken from the JSON response sent by the server
-        navigate('/dashboard');   //Login went well, now it goes to /dashboard
-      } else {   //The user wants to registrate
-        await authAPI.register(formData);  //We give the whole form, including name and surname this time
-        alert('Registration successful! Please login.');
-        setIsLogin(true);   //After the user is registred it switches back to the login page
+      if (isLogin) {
+        const res = await authAPI.login({ email: formData.email, password: formData.password });
+        localStorage.setItem("jwt_token", res.data.jwt_token);
+        navigate("/dashboard");
+      } else {
+        await authAPI.register(formData);
+        localStorage.setItem("user_info", JSON.stringify({ name: formData.name, surname: formData.surname }));
+        alert("Account created successfully. Please, sign in.");
+        setIsLogin(true);
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Invalid credentials or server error');
+      setError(err.response?.data?.detail || "Invalid credentials or server error");
     }
   };
 
@@ -34,17 +34,15 @@ const Login = () => {
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
       <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         
-        {/* Left Side */}
         <div className="hidden md:flex w-1/2 bg-teal-700 text-white flex-col justify-center items-center p-10">
           <Activity size={64} className="mb-4" />
           <h1 className="text-3xl font-bold mb-2">EarlyCare Gateway</h1>
           <p className="text-center text-teal-100">
             Clinical Decision Support System. <br/>
-            Professional Access Only.
+            Authorized Access Only.
           </p>
         </div>
 
-        {/* Right Side (Form) */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             {isLogin ? <LogIn className="text-teal-600"/> : <UserPlus className="text-teal-600"/>}
@@ -118,17 +116,17 @@ const Login = () => {
               type="submit"
               className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold p-3 rounded-lg transition duration-200 shadow-md mt-4"
             >
-              {isLogin ? 'Login' : 'Create Account'}
+              {isLogin ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : "Already have credentials? "}
+            {isLogin ? "Don't have an account? " : "Already registered? "}
             <button 
               onClick={() => { setError(''); setIsLogin(!isLogin); }}
               className="text-teal-600 font-semibold hover:underline"
             >
-              {isLogin ? 'Register now' : 'Sign In'}
+              {isLogin ? "Create Account" : "Sign In"}
             </button>
           </div>
         </div>

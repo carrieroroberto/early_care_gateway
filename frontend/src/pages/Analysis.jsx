@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {aiAPI} from '../services/api';
 import { runDiagnosticWorkflow } from '../services/api';
 import { 
   Activity, FileText, Image, Upload, Brain,
@@ -16,9 +17,8 @@ const Analysis = () => {
   const [signalInput, setSignalInput] = useState(''); 
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-
-  //Default image state is 'chest_xray'
   const [imageType, setImageType] = useState('chest_xray');
+
 
   //Numeric Data State including all the features used for evaluation
   const [cardioData, setCardioData] = useState({
@@ -47,64 +47,83 @@ const Analysis = () => {
 
   // --- Analysis handling ---
   const handleAnalyze = async () => {
-    setLoading(true);   //Since we're analyzing, loading becomes true
-    setResult(null);   //And setResult becomes null
+    setLoading(true);
+    setResult(null);
 
     try {
-      let dataType = activeTab;
-      let rawData = null;
-      let targetModel = 'local'; 
+      let rawDataString = ""; 
+      let strategy = "";
 
-      //Text
+      // Text -> Backend key: "text"
       if (activeTab === 'text') {
         if (!textInput) throw new Error("Please enter clinical notes.");
-        rawData = textInput;
+        rawDataString = textInput;
+        strategy = "text"; 
       } 
       
-      //Image
+      // Image -> Backend keys: "img_rx" o "img_skin"
       else if (activeTab === 'image') {
         if (!selectedFile) throw new Error("Please upload an image.");
-        rawData = await convertBase64(selectedFile);
-        dataType = imageType; 
+        rawDataString = await convertBase64(selectedFile);
+        
+        if (imageType === 'chest_xray') {
+            strategy = "img_rx";
+        } else {
+            strategy = "img_skin";
+        }
       } 
       
-      //Numeric
+      // Numeric -> Backend key: "numeric"
       else if (activeTab === 'numeric') {
-        rawData = {   //Converting to integers
-          age: parseInt(cardioData.age) || 0,
-          sex: parseInt(cardioData.sex),
-          cp: parseInt(cardioData.cp),
-          trestbps: parseInt(cardioData.trestbps) || 0,
-          chol: parseInt(cardioData.chol) || 0,
-          fbs: parseInt(cardioData.fbs),
-          restecg: parseInt(cardioData.restecg),
-          thalach: parseInt(cardioData.thalach) || 0,
-          exang: parseInt(cardioData.exang),
-          oldpeak: parseFloat(cardioData.oldpeak) || 0.0,
-          slope: parseInt(cardioData.slope),
-          ca: parseInt(cardioData.ca),
-          thal: parseInt(cardioData.thal)
-        };
-      } 
+         const numericArray = [
+          parseInt(cardioData.age) || 0,        // 1. age
+          parseInt(cardioData.sex),             // 2. sex
+          parseInt(cardioData.cp),              // 3. cp
+          parseInt(cardioData.trestbps) || 0,   // 4. trestbps
+          parseInt(cardioData.chol) || 0,       // 5. chol
+          parseInt(cardioData.fbs),             // 6. fbs
+          parseInt(cardioData.restecg),         // 7. restecg
+          parseInt(cardioData.thalach) || 0,    // 8. thalach
+          parseInt(cardioData.exang),           // 9. exang
+          parseFloat(cardioData.oldpeak) || 0.0,// 10. oldpeak (Float!)
+          parseInt(cardioData.slope),           // 11. slope
+          parseInt(cardioData.ca),              // 12. ca
+          parseInt(cardioData.thal)             // 13. thal
+        ];
+        rawDataString = JSON.stringify(numericArray); 
+        strategy = "numeric";
+      }
       
-      //ECG signal
+      // Signal -> Backend key: "signal"
       else if (activeTab === 'signal') {
         if (!signalInput) throw new Error("Please enter signal data.");
-        rawData = signalInput.split(',')
+        
+        const arr = signalInput.split(',')
           .map(val => parseFloat(val.trim()))
           .filter(val => !isNaN(val)); 
         
-        if (rawData.length === 0) throw new Error("Invalid signal data format.");
-        dataType = 'signal';
+        if (arr.length === 0) throw new Error("Invalid signal format.");
+        
+        rawDataString = JSON.stringify(arr); 
+        strategy = "signal";
       }
 
-      //API Calling
-      const response = await runDiagnosticWorkflow(dataType, rawData, targetModel);
-      setResult(response);
+
+      const payload = {
+        patient_hashed_cf: "TEST_PATIENT_CF_123", 
+        strategy: strategy, 
+        raw_data: rawDataString 
+      };
+
+      console.log("Sending to gateway:", payload);
+      
+      const response = await aiAPI.analyse(payload);
+      
+      setResult(response.data.report);
 
     } catch (error) {
       console.error(error);
-      alert(`Analysis Failed: ${error.message}`);
+      alert("Analysis Failed: " + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
     }
