@@ -34,3 +34,6 @@ out/
 *.db
 *.sqlite
 __pydantic_cache__/
+
+.DS_Store
+.DS
