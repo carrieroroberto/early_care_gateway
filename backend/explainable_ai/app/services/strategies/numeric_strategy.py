@@ -6,17 +6,25 @@ from ...services.strategies.I_strategy import AnalysisStrategy
 from ...utils.ai_models_config import Config
 
 class NumericAnalysisStrategy(AnalysisStrategy):
+    """
+    Strategy for Numeric Analysis (Tabular data).
+    Uses XGBoost for heart disease prediction and SHAP for feature importance explanation.
+    """
     def __init__(self):
         self.model = None
         self.explainer = None
         self._load_model()
 
     def _load_model(self):
+        """
+        Loads the XGBoost model and the SHAP explainer from disk.
+        """
         if os.path.exists(Config.XGBOOST_PATH):
             try:
                 self.model = joblib.load(Config.XGBOOST_PATH)
                 try:
                     import shap
+                    # Initialize SHAP TreeExplainer for the model
                     self.explainer = shap.TreeExplainer(self.model)
                 except Exception:
                     self.explainer = None
@@ -26,6 +34,9 @@ class NumericAnalysisStrategy(AnalysisStrategy):
             self.model = None
 
     async def analyse(self, payload: dict) -> dict:
+        """
+        Performs prediction on tabular data and calculates feature impact.
+        """
         if not self.model:
             return {"error": "Heart model not available"}
 
@@ -35,22 +46,27 @@ class NumericAnalysisStrategy(AnalysisStrategy):
             if not features:
                 return {"error": "No data provided"}
 
+            # Parse input JSON and create DataFrame with correct column names
             features = json.loads(features)
             input_df = pd.DataFrame([features], columns=Config.HEART_FEATURES)
 
+            # Predict probability of heart disease
             probs = self.model.predict_proba(input_df)[0]
             risk_prob = probs[1]
 
             explanation = []
             if self.explainer:
                 try:
+                    # Calculate SHAP values to explain the prediction
                     shap_values = self.explainer.shap_values(input_df)
 
+                    # Handle different SHAP output formats (binary classification)
                     if isinstance(shap_values, list):
                         vals = shap_values[1][0]
                     else:
                         vals = shap_values[0]
 
+                    # Map features to their SHAP impact values
                     for feature, impact, value in zip(Config.HEART_FEATURES, vals, input_df.iloc[0]):
                             explanation.append({
                                 "Feature": feature,
@@ -58,6 +74,7 @@ class NumericAnalysisStrategy(AnalysisStrategy):
                                 "Impact_score": round(float(impact), 4),
                                 "Effect": "Increases Risk" if impact > 0 else "Decreases Risk"
                             })
+                    # Sort factors by impact magnitude
                     explanation.sort(key=lambda x: abs(x['impact_score']), reverse=True)
                 except Exception:
                     pass

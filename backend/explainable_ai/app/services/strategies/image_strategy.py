@@ -7,14 +7,23 @@ import numpy as np
 from torchvision import models
 import torch.nn.functional as F
 from ...utils.ai_models_config import Config
+# Import GradCAM tools for explainability (heatmaps)
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from ...services.strategies.I_strategy import AnalysisStrategy
 from PIL import Image
 
+
 class ImageAnalysisStrategy(AnalysisStrategy):
+    """
+    Strategy for Image Analysis.
+    Supports X-Rays (CheXNet) and Skin Lesions (EfficientNet).
+    Generates GradCAM heatmaps for explainability.
+    """
+
     def __init__(self):
+        # Determine device (CUDA GPU or CPU)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.chexnet = None
         self.skinnet = None
@@ -23,11 +32,16 @@ class ImageAnalysisStrategy(AnalysisStrategy):
         self._load_models()
 
     def _load_models(self):
+        """
+        Loads the CheXNet (DenseNet121) and SkinNet (EfficientNet-B0) models.
+        """
+        # Load CheXNet for X-Rays
         try:
             model = models.densenet121(pretrained=False)
             model.classifier = torch.nn.Linear(model.classifier.in_features, len(Config.XRAY_LABELS))
             if os.path.exists(Config.CHEXNET_PATH):
                 state = torch.load(Config.CHEXNET_PATH, map_location=self.device)
+                # Handle keys if they were saved with DataParallel ('module.' prefix)
                 new_state = {k.replace("module.", ""): v for k, v in state.items()}
                 model.load_state_dict(new_state)
                 model.to(self.device).eval()
@@ -36,6 +50,7 @@ class ImageAnalysisStrategy(AnalysisStrategy):
         except Exception as e:
             raise Exception(f"Error loading CheXNet: {e}")
 
+        # Load SkinNet for dermatology
         try:
             model = models.efficientnet_b0(pretrained=False)
             model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, len(Config.SKIN_LABELS))
@@ -48,13 +63,18 @@ class ImageAnalysisStrategy(AnalysisStrategy):
             raise Exception(f"Error loading SkinNet: {e}")
 
     def _generate_heatmap_b64(self, model, target_layers, tensor, target_class_idx):
+        """
+        Generates a GradCAM heatmap, overlays it on the image, and returns it as a base64 string.
+        """
         if not Config.ENABLE_GRADCAM or not target_layers:
             return None
         try:
+            # Initialize GradCAM
             cam = GradCAM(model=model, target_layers=target_layers)
             targets = [ClassifierOutputTarget(target_class_idx)]
             grayscale_cam = cam(input_tensor=tensor, targets=targets)[0, :]
 
+            # Denormalize image for visualization
             img_tensor = tensor.squeeze(0).cpu()
             mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
             std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
@@ -62,8 +82,11 @@ class ImageAnalysisStrategy(AnalysisStrategy):
             img_denorm = torch.clamp(img_denorm, 0, 1)
             img_np = img_denorm.permute(1, 2, 0).numpy()
 
+            # Create heatmap overlay
             visualization = show_cam_on_image(img_np, grayscale_cam, use_rgb=True)
             img_pil = Image.fromarray(visualization)
+
+            # Convert to Base64
             buffered = io.BytesIO()
             img_pil.save(buffered, format="JPEG")
             return base64.b64encode(buffered.getvalue()).decode('utf-8')
@@ -71,6 +94,9 @@ class ImageAnalysisStrategy(AnalysisStrategy):
             return None
 
     def _base64_to_tensor(self, tensor_b64):
+        """
+        Decodes a base64 string back into a PyTorch tensor.
+        """
         try:
             raw = base64.b64decode(tensor_b64)
             np_tensor = pickle.loads(raw)
@@ -81,6 +107,10 @@ class ImageAnalysisStrategy(AnalysisStrategy):
             raise Exception(f"Failed to decode base64 tensor: {str(e)}")
 
     async def analyse(self, payload: dict) -> dict:
+        """
+        Main analysis method for images.
+        Routes request to either CheXNet or SkinNet based on image type.
+        """
         try:
             img_type = payload.get("data").get("type")
             b64tensor = payload.get("data").get("data")
@@ -90,6 +120,7 @@ class ImageAnalysisStrategy(AnalysisStrategy):
 
             tensor = self._base64_to_tensor(b64tensor)
 
+            # Process X-Ray images
             if img_type == "img_rx" and self.chexnet:
                 with torch.no_grad():
                     out = self.chexnet(tensor)
@@ -105,6 +136,7 @@ class ImageAnalysisStrategy(AnalysisStrategy):
                     "explanation": heatmap
                 }
 
+            # Process Skin images
             elif img_type == "img_skin" and self.skinnet:
                 with torch.no_grad():
                     out = self.skinnet(tensor)

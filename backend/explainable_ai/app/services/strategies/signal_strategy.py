@@ -5,14 +5,23 @@ import json
 import numpy as np
 
 class SignalAnalysisStrategy(AnalysisStrategy):
+    """
+    Strategy for Signal Analysis (e.g., ECG).
+    Currently relies on Generative AI (Gemini) to analyze signal statistics and samples.
+    """
     def __init__(self):
         self.model = None
 
+        # Configure Gemini model if API key is available
         if Config.GOOGLE_API_KEY:
             genai.configure(api_key=Config.GOOGLE_API_KEY)
             self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
     async def analyse(self, payload: dict) -> dict:
+        """
+        Analyzes ECG signal data using GenAI.
+        Computes basic stats (min, max, mean) and sends a prompt to the LLM.
+        """
         if not self.model:
             return {"error": "Gemini model not available"}
 
@@ -21,9 +30,11 @@ class SignalAnalysisStrategy(AnalysisStrategy):
             if not signal_list_str:
                 return {"error": "Signal data not provided"}
 
+            # Parse signal data into a NumPy array
             signal_data = json.loads(signal_list_str)
             signal_array = np.array(signal_data, dtype=np.float32)
 
+            # Compute statistical features to help the LLM
             stats = {
                 "min": float(np.min(signal_array)),
                 "max": float(np.max(signal_array)),
@@ -32,6 +43,7 @@ class SignalAnalysisStrategy(AnalysisStrategy):
 
             sample = signal_array.tolist()
 
+            # Construct the prompt for the AI model
             prompt = f"""
             Analyze this ECG signal.
             Statistics: {json.dumps(stats)}
@@ -47,6 +59,7 @@ class SignalAnalysisStrategy(AnalysisStrategy):
             }}
             """
 
+            # Generate content and parse JSON response
             response = self.model.generate_content(prompt)
             cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
             result = json.loads(cleaned_text)
