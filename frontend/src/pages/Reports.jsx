@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Calendar, User } from "lucide-react";
+import { Search, Calendar, User, CheckCircle } from "lucide-react";
 import { reportsAPI, hashPatientCf } from "../services/api";
 
 const Reports = () => {
@@ -156,40 +156,114 @@ const Reports = () => {
       </div>
 
       {showModal && selectedReport && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center overflow-auto" style={{ marginTop: "unset" }}>
-          <div className="bg-white rounded-lg p-6 w-96 max-w-full max-h-full relative shadow-lg">
-            <button
-              className="absolute top-1 right-3 text-gray-500 hover:text-gray-700 text-lg"
-              onClick={closeModal}
-            >
-              ✕
-            </button>
-            <h2 className="text-lg font-bold mb-2">Report Details</h2>
-            <p>
-              <strong>Diagnosis:</strong> {selectedReport.diagnosis}
+  <div style={{margin: "unset"}} className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center overflow-auto">
+    <button
+      className="absolute top-3 right-5 text-gray-300 hover:text-white text-xl"
+      onClick={closeModal}
+    >
+      ✕
+    </button>
+
+    <div className="bg-white rounded-xl shadow-xl border-t-4 border-teal-500 overflow-hidden animate-slide-up w-full max-w-3xl mx-3">
+
+      {/* Header */}
+      <div className="bg-teal-50 p-4 border-b border-teal-100 flex items-center gap-2">
+        <CheckCircle className="text-teal-600" size={20} />
+        <h3 className="font-bold text-teal-900">Analysis Result</h3>
+      </div>
+
+      {/* Layout Orizzontale */}
+      <div className="flex flex-col md:flex-row p-6 gap-6">
+
+        {/* SINISTRA — DIAGNOSIS + CONFIDENCE */}
+        <div className="md:w-1/3 space-y-6">
+
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase">Diagnosis</span>
+            <p className="text-2xl font-bold text-gray-900">
+              {selectedReport.diagnosis}
             </p>
-            <p>
-              <strong>Confidence:</strong> {(selectedReport.confidence * 100).toFixed(2)}%
-            </p>
-            <div className="mt-4">
-              <strong>Explanation:</strong>
-              {selectedReport.explanation ? (
-                ["img_rx", "img_skin"].includes(selectedReport.strategy) ? (
-                  <img
-                    src={base64ToUrl(selectedReport.explanation)}
-                    alt="Explanation"
-                    className="mt-2 w-full rounded border"
-                  />
-                ) : (
-                  <p className="mt-2 whitespace-pre-wrap">{selectedReport.explanation}</p>
-                )
-              ) : (
-                <p className="mt-2 text-gray-500">No explanation available</p>
-              )}
-            </div>
           </div>
+
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase">Confidence</span>
+            <p className="text-xl font-bold text-gray-900">
+              {(selectedReport.confidence * 100).toFixed(1)}%
+            </p>
+          </div>
+
         </div>
-      )}
+
+        {/* DESTRA — EXPLANATION */}
+        <div className="md:w-2/3">
+
+          {selectedReport.explanation && (
+            selectedReport.strategy.startsWith("img") ? (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-teal-600 uppercase">Heatmap (Grad-CAM)</span>
+                <img
+                  src={base64ToUrl(selectedReport.explanation)}
+                  alt="Heatmap"
+                  className="rounded-lg w-full max-h-[420px] object-contain"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-teal-600 uppercase">Explanation</span>
+
+                {/* Controllo JSON */}
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(selectedReport.explanation);
+                    if (Array.isArray(parsed)) {
+                      return (
+                        <div className="overflow-auto max-h-[420px] border rounded-lg">
+                          <table className="w-full text-sm border-collapse">
+                            <thead className="bg-gray-100 sticky top-0">
+                              <tr>
+                                <th className="border p-2 text-left">Feature</th>
+                                <th className="border p-2 text-right">Value</th>
+                                <th className="border p-2 text-right">Impact</th>
+                                <th className="border p-2 text-left">Effect</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parsed.map((item, idx) => (
+                                <tr key={idx} className="even:bg-gray-50">
+                                  <td className="border p-2">{item.Feature}</td>
+                                  <td className="border p-2 text-right">{item.Value}</td>
+                                  <td className="border p-2 text-right">{item.Impact_score}</td>
+                                  <td className="border p-2">{item.Effect}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <p className="text-sm text-gray-700 italic whitespace-pre-wrap">
+                          {selectedReport.explanation}
+                        </p>
+                      );
+                    }
+                  } catch {
+                    return (
+                      <p className="text-sm text-gray-700 italic whitespace-pre-wrap">
+                        {selectedReport.explanation}
+                      </p>
+                    );
+                  }
+                })()}
+              </div>
+            )
+          )}
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

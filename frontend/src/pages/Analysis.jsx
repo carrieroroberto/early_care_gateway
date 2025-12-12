@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { aiAPI } from "../services/api";
-import { Activity, FileText, Image, Upload, Brain, ArrowRight, AlertTriangle, CheckCircle, BarChart2, Scan, User } from "lucide-react";
+import { Activity, FileText, Image, Upload, Brain, ArrowRight, CheckCircle, BarChart2, Scan, User } from "lucide-react";
 
 const HEART_FEATURES = [
   "age", "trestbps", "chol", "thalch", "oldpeak", "ca", "sex_Male",
@@ -170,10 +170,10 @@ const Analysis = () => {
       };
 
       console.log("Sending to gateway:", payload);
-
+      resetAllInputs();
+      
       const response = await aiAPI.analyse(payload);
       setResult(response.data.report);
-      resetAllInputs();
 
     } catch (error) {
       console.error(error);
@@ -186,8 +186,8 @@ const Analysis = () => {
   const resetAllInputs = () => {
     setTextInput("");
     setSignalInput("");
-    setSelectedFile(null);
     setPreviewUrl(null);
+    setSelectedFile(null);
     setCardioData(initialCardioState);
   };
 
@@ -208,7 +208,7 @@ const Analysis = () => {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setResult(null); }}
+            onClick={() => { setActiveTab(tab.id); setResult(null); resetAllInputs();}}
             className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all rounded-t-lg border-b-2 ${
               activeTab === tab.id
                 ? "border-teal-600 text-teal-700 bg-teal-50"
@@ -225,7 +225,7 @@ const Analysis = () => {
           
           {activeTab === "text" && (
             <div className="space-y-4">
-              <label className="font-bold text-gray-700">Symptoms Description</label>
+              <label className="font-bold text-gray-700">Symptoms Description</label> <span className="text-red-500">*</span>
               <textarea 
                 className="w-full h-64 p-4 border-2 border-gray-300 rounded-lg focus:border-teal-600 outline-none font-mono text-sm"
                 placeholder="Ex: The patient complains of severe tachycardia and sweating..."
@@ -242,7 +242,7 @@ const Analysis = () => {
                 <label className="block font-bold text-gray-700 mb-3">Select Image Type</label>
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={() => setImageType("x-ray")}
+                    onClick={() => {setImageType("x-ray"); resetAllInputs();}}
                     className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${
                       imageType === "x-ray" 
                         ? "border-teal-600 bg-teal-50 text-teal-800 ring-1 ring-teal-600"
@@ -254,7 +254,7 @@ const Analysis = () => {
                   </button>
 
                   <button
-                    onClick={() => setImageType("skin")}
+                    onClick={() => {setImageType("skin"); resetAllInputs();}}
                     className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${
                       imageType === "skin"
                         ? "border-teal-600 bg-teal-50 text-teal-800 ring-1 ring-teal-600"
@@ -268,9 +268,11 @@ const Analysis = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-2">
-                  Upload {imageType === "x-ray" ? "X-Ray" : "Skin Lesion"} Image
-                </label>
+                <div>
+                  <label className="font-bold text-gray-700 mb-2">
+                    Upload {imageType === "x-ray" ? "X-Ray" : "Skin Lesion"} Image </label>
+                  <span className="text-red-500">*</span>
+                </div>
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 hover:bg-gray-100 transition">
                   <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" accept="image/*" />
                   <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
@@ -385,7 +387,7 @@ const Analysis = () => {
 
           {activeTab === "signal" && (
             <div className="space-y-2">
-              <label className="font-bold text-gray-700">ECG Signal Data</label>
+              <label className="font-bold text-gray-700">ECG Signal Samples</label> <span className="text-red-500">*</span>
               <p className="text-s text-gray-500">Paste comma-separated voltage values</p>
               <textarea 
                 className="w-full h-64 p-4 border-2 border-gray-300 rounded-lg focus:border-teal-600 outline-none font-mono text-sm"
@@ -453,7 +455,7 @@ const Analysis = () => {
         ) : (
           <div className="h-full bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 p-6 text-center min-h-[300px]">
             <Brain size={40} className="mb-3 opacity-20" />
-            <p>Waiting for Data...</p>
+            {!loading ? (<p>Waiting for Data...</p>) : (<p>Running Analysis. Please, wait...</p>)}
           </div>
         )}
         </div>
@@ -463,7 +465,7 @@ const Analysis = () => {
 
 const InputGroup = ({ label, type = "text", val, setter, step }) => (
   <div>
-    <label className="text-xs font-bold text-gray-500 uppercase">{label}</label>
+    <label className="text-xs font-bold text-gray-500 uppercase">{label}</label> <span className="text-red-500">*</span>
     <input
       type={type}
       step={step}
@@ -477,7 +479,9 @@ const InputGroup = ({ label, type = "text", val, setter, step }) => (
 
 const SelectGroup = ({ label, val, setter, options }) => (
   <div className="flex flex-col">
-    <label className="text-xs font-bold text-gray-500 uppercase mb-1">{label}</label>
+    <div>
+      <label className="text-xs font-bold text-gray-500 uppercase mb-1">{label}</label> <span className="text-red-500">*</span>
+    </div>
     <select
       className="w-full p-2 border border-gray-300 rounded-lg focus:border-teal-600 focus:ring-1 focus:ring-teal-600 outline-none transition"
       value={val}
