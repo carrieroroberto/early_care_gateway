@@ -1,7 +1,7 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
 
-const GATEWAY_URL = "http://localhost:8002/gateway";
+const GATEWAY_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/gateway";
 
 const api = axios.create({
   baseURL: GATEWAY_URL,
@@ -33,23 +33,6 @@ export const reportsAPI = {
     const params = patientCf ? { patient_hashed_cf: hashPatientCf(patientCf) } : {};
     return api.get("/reports", { params });
   },
-};
-
-export const runDiagnosticWorkflow = async (rawData, strategy, patientCf = "test_patient_cf") => {
-  try {
-    const hashedCf = hashPatientCf(patientCf);
-
-    const payload = {
-      patient_hashed_cf: hashedCf,
-      strategy,
-      raw_data: rawData,
-    };
-
-    const response = await api.post("/analyse", payload);
-    return response.data.report;
-  } catch (error) {
-    throw error;
-  }
 };
 
 export default api;

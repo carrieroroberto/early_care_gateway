@@ -1,4 +1,3 @@
-import React from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Activity, FileText, LogOut, User } from "lucide-react";
 
@@ -8,7 +7,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("jwt_token");
-    navigate('/');
+    navigate("/");
   };
 
   const navItems = [
@@ -24,11 +23,14 @@ const Layout = () => {
     <div className="flex h-screen bg-gray-100 font-sans"> 
       <aside className="w-64 bg-white shadow-xl flex flex-col z-10">
 
-        <div className="p-6 border-b flex items-center gap-3">
+        <div className="p-6 border-b flex flex-col items-center gap-3">
           <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
             <Activity size={18} />
           </div>
-          <span className="text-lg font-bold text-gray-800 tracking-tight">EarlyCare</span>
+          <div className="flex flex-col justify-center items-center">
+            <span className="text-lg font-bold text-gray-800 tracking-tight">EarlyCare Gateway</span>
+            <p className="text-gray-500 mt-1">AI Clinical Decision Support</p>
+          </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-2 mt-2">
@@ -38,8 +40,8 @@ const Layout = () => {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                 location.pathname === item.path 
-                  ? 'bg-teal-50 text-teal-700 font-semibold border-r-4 border-teal-600 shadow-sm' 
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
+                  ? "bg-teal-50 text-teal-700 font-semibold border-r-4 border-teal-600 shadow-sm" 
+                  : "text-gray-600 hover:bg-gray-50 hover:text-teal-600"
               }`}
             >
               {item.icon}
@@ -50,8 +52,8 @@ const Layout = () => {
 
         <div className="p-4 border-t bg-gray-50">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center border border-teal-200">
-              <User size={20} className="text-teal-700"/>
+            <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center border border-teal-600">
+              <User size={20} className="text-teal-600"/>
             </div>
             <div>
 
@@ -61,7 +63,7 @@ const Layout = () => {
           </div>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-100 p-2 rounded-lg transition text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 p-2 rounded-lg transition text-sm font-medium"
           >
             <LogOut size={16} /> Logout
           </button>

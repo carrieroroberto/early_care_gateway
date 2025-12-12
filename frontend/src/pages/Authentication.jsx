@@ -1,17 +1,50 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
 import { Activity, Lock, Mail, UserPlus, LogIn, User } from "lucide-react";
 
-const Login = () => {
+const Authentication = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: "", surname: "", email: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    const name = formData.name.trim();
+    const surname = formData.surname.trim();
+    const email = formData.email.trim();
+    const password = formData.password.trim();
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+
+    if (!isLogin) {
+      if (name.length < 2) return "Name must have at least 2 characters.";
+      if (surname.length < 2) return "Surname must have at least 2 characters.";
+    }
+
+    if (!email) return "Email is required.";
+    if (!emailRegex.test(email)) return "Invalid email format.";
+
+    if (!password) return "Password is required.";
+
+    if (!isLogin && password.length < 8)
+      return "Password must have at least 8 characters.";
+
+    if (!isLogin && password.length > 100)
+      return "Password cannot exceed 100 characters.";
+
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     
     try {
       if (isLogin) {
@@ -38,15 +71,15 @@ const Login = () => {
           <Activity size={64} className="mb-4" />
           <h1 className="text-3xl font-bold mb-2">EarlyCare Gateway</h1>
           <p className="text-center text-teal-100">
-            Clinical Decision Support System. <br/>
-            Authorized Access Only.
+            AI Clinical Decision Support <br/>
+            {"(Authorized Access Only)"}
           </p>
         </div>
 
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             {isLogin ? <LogIn className="text-teal-600"/> : <UserPlus className="text-teal-600"/>}
-            {isLogin ? 'Welcome Back' : 'New Doctor'}
+            {isLogin ? "Welcome Back" : "New Doctor"}
           </h2>
 
           {error && (
@@ -60,7 +93,9 @@ const Login = () => {
             {!isLogin && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Name <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 text-gray-400" size={18} />
                     <input
@@ -72,7 +107,9 @@ const Login = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Surname</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Surname <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 text-gray-400" size={18} />
                     <input
@@ -87,7 +124,9 @@ const Login = () => {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Email <span className="text-red-500">*</span>
+                  </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
                 <input
@@ -100,7 +139,9 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Password <span className="text-red-500">*</span>
+                  </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                 <input
@@ -116,14 +157,14 @@ const Login = () => {
               type="submit"
               className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold p-3 rounded-lg transition duration-200 shadow-md mt-4"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLogin ? "Sign In" : "Create Account"}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
             {isLogin ? "Don't have an account? " : "Already registered? "}
             <button 
-              onClick={() => { setError(''); setIsLogin(!isLogin); }}
+              onClick={() => { setError(""); setIsLogin(!isLogin); }}
               className="text-teal-600 font-semibold hover:underline"
             >
               {isLogin ? "Create Account" : "Sign In"}
@@ -135,4 +176,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Authentication;
