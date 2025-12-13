@@ -1,5 +1,6 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
+import jwt_decode from "jwt-decode";
 
 const GATEWAY_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/gateway";
 
@@ -20,8 +21,18 @@ export const hashPatientCf = (patientCf) => {
 };
 
 export const authAPI = {
-  login: (credentials) => api.post("/login", credentials),
-  register: (data) => api.post("/register", data)
+  login: async (credentials) => {
+    const res = await api.post("/login", credentials);
+    const token = res.data.jwt_token;
+
+    localStorage.setItem("jwt_token", token);
+
+    const decoded = jwt_decode(token);
+    localStorage.setItem("doctor_info", JSON.stringify({ name: decoded.name, surname: decoded.surname }));
+
+    return res;
+  },
+  register: (data) => api.post("/register", data),
 };
 
 export const aiAPI = {

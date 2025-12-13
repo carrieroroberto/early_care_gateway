@@ -7,7 +7,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("jwt_token");
-    localStorage.removeItem("user_info");
+    localStorage.removeItem("doctor_info");
     navigate("/");
   };
 
@@ -16,7 +16,7 @@ const Layout = () => {
     { path: "/dashboard/reports", label: "Reports History", icon: <FileText size={20} /> },
   ];
 
-  const storedUser = localStorage.getItem("user_info");
+  const storedUser = localStorage.getItem("doctor_info");
   const userInfo = storedUser ? JSON.parse(storedUser) : null;
   const displayName = userInfo ? `Dr. ${userInfo.name} ${userInfo.surname}` : "Dr. User";
 

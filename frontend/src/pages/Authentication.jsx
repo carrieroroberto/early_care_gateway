@@ -48,12 +48,10 @@ const Authentication = () => {
 
     try {
       if (isLogin) {
-        const res = await authAPI.login({ email: formData.email, password: formData.password });
-        localStorage.setItem("jwt_token", res.data.jwt_token);
+        await authAPI.login({ email: formData.email, password: formData.password });
         navigate("/dashboard");
       } else {
         await authAPI.register(formData);
-        localStorage.setItem("user_info", JSON.stringify({ name: formData.name, surname: formData.surname }));
         alert("Account created successfully. Please, sign in.");
         setIsLogin(true);
       }

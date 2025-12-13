@@ -74,6 +74,7 @@ class TextAnalysisStrategy(AnalysisStrategy):
                 try:
                     prompt = f"""
                     Act as an expert doctor.
+                    If the request is not in english, translate it to English first. Also, ensure the final response is in English.
                     Patient Symptoms: "{text}"
                     AI Classification (BERT): {macro_category} (Confidence {confidence:.2%})
 

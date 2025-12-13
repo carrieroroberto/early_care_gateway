@@ -91,14 +91,12 @@ class AuthenticationService:
 
     async def login_doctor(self, login_request: LoginDoctorRequest) -> LoginDoctorResponse:
         """
-        Authenticates a doctor and issues a JWT token.
+        Authenticates a doctor and issues a JWT token with doctor_id, name, and surname.
         """
         # Retrieve the doctor by email
         doctor = await self.doctorRepository.find_by_email(str(login_request.email))
 
-        # Verify if doctor exists and if the provided password matches the stored hash
         if not doctor or not self.passwordHasher.verify(login_request.password, doctor.hashed_password):
-            # Notify observers about the login failure
             await self.notify({
                 "service": "authentication",
                 "event": "login_fail",
@@ -106,10 +104,13 @@ class AuthenticationService:
             })
             raise Exception("Invalid credentials")
 
-        # Generate a JWT token for the authenticated doctor
-        token = self.jwtSigner.create_token(str(doctor.id))
+        # Create a JWT token including doctor_id, name, and surname
+        token = self.jwtSigner.create_token(
+            doctor_id=str(doctor.id),
+            name=doctor.name,
+            surname=doctor.surname
+        )
 
-        # Notify observers about the successful login
         await self.notify({
             "service": "authentication",
             "event": "login_success",
@@ -117,7 +118,6 @@ class AuthenticationService:
             "doctor_id": doctor.id
         })
 
-        # Return the response containing the JWT token
         return LoginDoctorResponse(jwt_token=token)
 
     async def validate_token(self, token_request: ValidateTokenRequest) -> ValidateTokenResponse:

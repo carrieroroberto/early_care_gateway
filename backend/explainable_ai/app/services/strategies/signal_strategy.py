@@ -46,6 +46,7 @@ class SignalAnalysisStrategy(AnalysisStrategy):
             # Construct the prompt for the AI model
             prompt = f"""
             Analyze this ECG signal.
+            Take into account only numerical samples, ignore any other text. Also, ensure the final response is in English.
             Statistics: {json.dumps(stats)}
             Data: {json.dumps(sample)}
 
