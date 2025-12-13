@@ -5,7 +5,7 @@ const GATEWAY_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/gate
 
 const api = axios.create({
   baseURL: GATEWAY_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json" }
 });
 
 api.interceptors.request.use((config) => {
@@ -21,18 +21,21 @@ export const hashPatientCf = (patientCf) => {
 
 export const authAPI = {
   login: (credentials) => api.post("/login", credentials),
-  register: (data) => api.post("/register", data),
+  register: (data) => api.post("/register", data)
 };
 
 export const aiAPI = {
-  analyse: (payload) => api.post("/analyse", payload),
+  analyse: (payload) => {
+    payload.patient_hashed_cf = hashPatientCf(payload.patient_hashed_cf);
+    return api.post("/analyse", payload);
+  },
 };
 
 export const reportsAPI = {
   getAll: (patientCf = "") => {
     const params = patientCf ? { patient_hashed_cf: hashPatientCf(patientCf) } : {};
     return api.get("/reports", { params });
-  },
+  }
 };
 
 export default api;

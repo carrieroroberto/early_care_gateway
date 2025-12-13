@@ -37,15 +37,19 @@ const Reports = () => {
     setShowModal(false);
   };
 
-  const formatDate = (isoString) => {
+  const formatDateParts = (isoString) => {
     const date = new Date(isoString);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
 
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+    return {
+      date: `${day}/${month}/${year}`,
+      time: `${hours}:${minutes}:${seconds}`
+    };
   };
 
   const base64ToUrl = (base64, mimeType = "image/jpeg") => {
@@ -77,6 +81,11 @@ const Reports = () => {
     }
   };
 
+  const truncateHash = (hash, chars = 10) => {
+    if (!hash) return "";
+    return hash.length > chars ? `${hash.slice(0, chars)}...` : hash;
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
@@ -92,9 +101,9 @@ const Reports = () => {
           <input
             type="text"
             placeholder="Search by patient fiscal code..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none transition"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:border-teal-600 focus:ring-1 focus:ring-teal-600 outline-none transition"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value.toUpperCase())}
           />
         </div>
       </div>
@@ -110,10 +119,10 @@ const Reports = () => {
           <table className="w-full table-fixed text-left border-collapse">
             <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
               <tr>
-                <th className="p-4 w-1/4 text-center">Report ID</th>
-                <th className="p-4 w-1/4 text-center">Patient Fiscal Code (Hashed)</th>
-                <th className="p-4 w-1/4 text-center">Date</th>
-                <th className="p-4 w-1/4 text-center">Strategy</th>
+                <th className="p-4 w-1/5 text-center">Report ID</th>
+                <th className="p-4 w-2/5 text-center">Patient Fiscal Code (Hashed)</th>
+                <th className="p-4 w-2/5 text-center"><div className="flex flex-col">Date<span className="lowercase"> (dd/mm/yyyy hh:mm:ss)</span></div></th>
+                <th className="p-4 w-1/5 text-center">Strategy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -123,31 +132,42 @@ const Reports = () => {
                   className="hover:bg-teal-50 cursor-pointer transition duration-150 text-center"
                   onClick={() => openModal(report)}
                 >
-                <td className="p-4 font-mono text-gray-500">{report.id}</td>
-                <td className="p-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-600">
-                      <User size={16} />
+                  <td className="p-4 font-mono text-gray-500">{report.id}</td>
+                  <td className="p-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 border border-teal-600">
+                        <User size={16} />
+                      </div>
+                      <span
+                        className="font-medium text-gray-700 text-center"
+                        title={report.patient_hashed_cf}
+                      >
+                        {truncateHash(report.patient_hashed_cf, 32)}
+                      </span>
                     </div>
-                    <span className="font-medium text-gray-700 text-center">{report.patient_hashed_cf}</span>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-8 h-8 flex items-center justify-center text-gray-500">
-                      <Calendar size={20} className="text-teal-600" />
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-8 h-8 flex items-center justify-center text-gray-500">
+                        <Calendar size={16} className="text-teal-600" />
+                      </div>
+                      {(() => {
+                        const { date, time } = formatDateParts(report.created_at);
+                        return (
+                          <span className="text-gray-700 text-center">
+                            <span className="font-medium">{date}</span> <span>{time}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
-                    <span className="font-medium text-gray-700 text-center">{formatDate(report.created_at)}</span>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <span
-                    className="px-4 py-2 rounded-full text-xs font-bold text-white text-center"
-                    style={{ backgroundColor: "#0d9488" }}
-                  >
-                    {getStrategyLabel(report.strategy)}
-                  </span>
-                </td>
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className="px-4 py-2 rounded-full text-xs font-bold text-center bg-teal-50 border border-teal-600 text-teal-600"
+                    >
+                      {getStrategyLabel(report.strategy)}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -156,114 +176,116 @@ const Reports = () => {
       </div>
 
       {showModal && selectedReport && (
-  <div style={{margin: "unset"}} className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center overflow-auto">
-    <button
-      className="absolute top-3 right-5 text-gray-300 hover:text-white text-xl"
-      onClick={closeModal}
-    >
-      ✕
-    </button>
+        <div style={{ margin: "unset" }} className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center overflow-auto">
+          <button
+            className="absolute top-3 right-5 text-gray-300 hover:text-white text-xl"
+            onClick={closeModal}
+          >
+            ✕
+          </button>
 
-    <div className="bg-white rounded-xl shadow-xl border-t-4 border-teal-500 overflow-hidden animate-slide-up w-full max-w-3xl mx-3">
+          <div className="
+  bg-white rounded-xl shadow-xl border-t-4 border-teal-500
+  overflow-hidden animate-slide-up
+  mx-3
+  inline-flex flex-col
+  w-auto
+  max-w-[90vw]
+">
 
-      {/* Header */}
-      <div className="bg-teal-50 p-4 border-b border-teal-100 flex items-center gap-2">
-        <CheckCircle className="text-teal-600" size={20} />
-        <h3 className="font-bold text-teal-900">Analysis Result</h3>
-      </div>
+            {/* Header */}
+            <div className="bg-teal-50 p-4 border-b border-teal-100 flex items-center gap-2">
+              <CheckCircle className="text-teal-600" size={20} />
+              <h3 className="font-bold text-teal-900">Analysis Result</h3>
+            </div>
 
-      {/* Layout Orizzontale */}
-      <div className="flex flex-col md:flex-row p-6 gap-6">
+            {/* Layout Orizzontale */}
+            <div className="flex flex-row items-start gap-14 p-6 flex-wrap">
 
-        {/* SINISTRA — DIAGNOSIS + CONFIDENCE */}
-        <div className="md:w-1/3 space-y-6">
+              {/* SINISTRA — DIAGNOSIS + CONFIDENCE */}
+              <div className="flex flex-col space-y-4 shrink-0 max-w-[300px] break-words">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Diagnosis</span>
+                  <p className="text-2xl font-bold text-gray-900 whitespace-normal">
+                    {selectedReport.diagnosis}
+                  </p>
+                </div>
 
-          <div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Diagnosis</span>
-            <p className="text-2xl font-bold text-gray-900">
-              {selectedReport.diagnosis}
-            </p>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Confidence</span>
-            <p className="text-xl font-bold text-gray-900">
-              {(selectedReport.confidence * 100).toFixed(1)}%
-            </p>
-          </div>
-
-        </div>
-
-        {/* DESTRA — EXPLANATION */}
-        <div className="md:w-2/3">
-
-          {selectedReport.explanation && (
-            selectedReport.strategy.startsWith("img") ? (
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-teal-600 uppercase">Heatmap (Grad-CAM)</span>
-                <img
-                  src={base64ToUrl(selectedReport.explanation)}
-                  alt="Heatmap"
-                  className="rounded-lg w-full max-h-[420px] object-contain"
-                />
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Confidence</span>
+                  <p className="text-xl font-bold text-gray-900 whitespace-normal">
+                    {(selectedReport.confidence * 100).toFixed(1)}%
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-teal-600 uppercase">Explanation</span>
 
-                {/* Controllo JSON */}
-                {(() => {
-                  try {
-                    const parsed = JSON.parse(selectedReport.explanation);
-                    if (Array.isArray(parsed)) {
-                      return (
-                        <div className="overflow-auto max-h-[420px] border rounded-lg">
-                          <table className="w-full text-sm border-collapse">
-                            <thead className="bg-gray-100 sticky top-0">
-                              <tr>
-                                <th className="border p-2 text-left">Feature</th>
-                                <th className="border p-2 text-right">Value</th>
-                                <th className="border p-2 text-right">Impact</th>
-                                <th className="border p-2 text-left">Effect</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {parsed.map((item, idx) => (
-                                <tr key={idx} className="even:bg-gray-50">
-                                  <td className="border p-2">{item.Feature}</td>
-                                  <td className="border p-2 text-right">{item.Value}</td>
-                                  <td className="border p-2 text-right">{item.Impact_score}</td>
-                                  <td className="border p-2">{item.Effect}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <p className="text-sm text-gray-700 italic whitespace-pre-wrap">
-                          {selectedReport.explanation}
-                        </p>
-                      );
-                    }
-                  } catch {
-                    return (
-                      <p className="text-sm text-gray-700 italic whitespace-pre-wrap">
-                        {selectedReport.explanation}
-                      </p>
-                    );
-                  }
-                })()}
+              {/* DESTRA — EXPLANATION */}
+              <div className="flex flex-col shrink-0 max-w-[450px] break-words">
+                {selectedReport.explanation && (
+                  selectedReport.strategy.startsWith("img") ? (
+                    <div className="space-y-2 w-[350px]">
+                      <span className="text-xs font-bold text-teal-600 uppercase">Heatmap (Grad-CAM)</span>
+                      <img
+                        src={base64ToUrl(selectedReport.explanation)}
+                        alt="Heatmap"
+                        className="rounded-lg object-cover w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-teal-600 uppercase">Explanation</span>
+
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(selectedReport.explanation);
+                          if (Array.isArray(parsed)) {
+                            return (
+                              <div className="overflow-auto max-h-[420px] w-full rounded-lg border pr-4">
+                                <table className="text-sm border-collapse whitespace-nowrap w-full">
+                                  <thead className="bg-gray-100 sticky top-0">
+                                    <tr>
+                                      <th className="border p-2 w-24 h-10 text-center">Feature</th>
+                                      <th className="border p-2 w-20 h-10 text-center">Value</th>
+                                      <th className="border p-2 w-20 h-10 text-center">Impact</th>
+                                      <th className="border p-2 w-28 h-10 text-center">Effect</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {parsed.map((item, idx) => (
+                                      <tr key={idx} className="even:bg-gray-50">
+                                        <td className="border p-2 w-24 h-10 text-center">{item.Feature}</td>
+                                        <td className="border p-2 w-20 h-10 text-center">{item.Value.toFixed(2)}</td>
+                                        <td className="border p-2 text-center">{item.Impact_score.toFixed(2)}</td>
+                                        <td className="border p-2 w-28 h-10 text-center">{item.Effect}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <p className="text-sm text-gray-700 italic whitespace-pre-wrap break-words text-justify">
+                                {selectedReport.explanation}
+                              </p>
+                            );
+                          }
+                        } catch {
+                          return (
+                            <p className="text-sm text-gray-700 italic whitespace-pre-wrap break-words text-justify">
+                              {selectedReport.explanation}
+                            </p>
+                          );
+                        }
+                      })()}
+                    </div>
+                  )
+                )}
               </div>
-            )
-          )}
+            </div>
+          </div>
         </div>
-
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };

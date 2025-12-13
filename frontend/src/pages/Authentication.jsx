@@ -45,7 +45,7 @@ const Authentication = () => {
       setError(validationError);
       return;
     }
-    
+
     try {
       if (isLogin) {
         const res = await authAPI.login({ email: formData.email, password: formData.password });
@@ -66,19 +66,19 @@ const Authentication = () => {
   return (
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
       <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-        
+
         <div className="hidden md:flex w-1/2 bg-teal-700 text-white flex-col justify-center items-center p-10">
           <Activity size={64} className="mb-4" />
           <h1 className="text-3xl font-bold mb-2">EarlyCare Gateway</h1>
           <p className="text-center text-teal-100">
-            AI Clinical Decision Support <br/>
+            AI Clinical Decision Support <br />
             {"(Authorized Access Only)"}
           </p>
         </div>
 
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            {isLogin ? <LogIn className="text-teal-600"/> : <UserPlus className="text-teal-600"/>}
+            {isLogin ? <LogIn className="text-teal-600" /> : <UserPlus className="text-teal-600" />}
             {isLogin ? "Welcome Back" : "New Doctor"}
           </h2>
 
@@ -89,7 +89,7 @@ const Authentication = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            
+
             {!isLogin && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -102,7 +102,7 @@ const Authentication = () => {
                       type="text"
                       placeholder="John"
                       className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
                 </div>
@@ -116,7 +116,7 @@ const Authentication = () => {
                       type="text"
                       placeholder="Doe"
                       className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                      onChange={(e) => setFormData({...formData, surname: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
                     />
                   </div>
                 </div>
@@ -124,31 +124,31 @@ const Authentication = () => {
             )}
 
             <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Email <span className="text-red-500">*</span>
-                  </label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
                 <input
                   type="email"
                   className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
                   placeholder="doctor@hospital.com"
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
             </div>
 
             <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Password <span className="text-red-500">*</span>
-                  </label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                 <input
                   type="password"
                   className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
                   placeholder="••••••••"
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
               </div>
             </div>
@@ -163,7 +163,7 @@ const Authentication = () => {
 
           <div className="mt-6 text-center text-sm text-gray-600">
             {isLogin ? "Don't have an account? " : "Already registered? "}
-            <button 
+            <button
               onClick={() => { setError(""); setIsLogin(!isLogin); }}
               className="text-teal-600 font-semibold hover:underline"
             >
