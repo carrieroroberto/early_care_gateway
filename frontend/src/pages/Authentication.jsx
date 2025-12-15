@@ -1,14 +1,35 @@
+// Import React hooks
 import { useState } from "react";
+
+// Import navigation hook from React Router
 import { useNavigate } from "react-router-dom";
+
+// Import authentication API functions
 import { authAPI } from "../services/api";
+
+// Import icons from lucide-react for form and UI elements
 import { Activity, Lock, Mail, UserPlus, LogIn, User } from "lucide-react";
 
+// Authentication component for login and registration
 const Authentication = () => {
+  // State to toggle between login and registration forms
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: "", surname: "", email: "", password: "" });
+
+  // State to store form input values
+  const [formData, setFormData] = useState({
+    name: "",
+    surname: "",
+    email: "",
+    password: ""
+  });
+
+  // State to handle error messages
   const [error, setError] = useState("");
+
+  // Hook to navigate programmatically
   const navigate = useNavigate();
 
+  // Validate form inputs before submission
   const validateForm = () => {
     const name = formData.name.trim();
     const surname = formData.surname.trim();
@@ -17,6 +38,7 @@ const Authentication = () => {
 
     const emailRegex = /^\S+@\S+\.\S+$/;
 
+    // Additional validation for registration
     if (!isLogin) {
       if (name.length < 2) return "Name must have at least 2 characters.";
       if (surname.length < 2) return "Surname must have at least 2 characters.";
@@ -36,6 +58,7 @@ const Authentication = () => {
     return null;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -48,9 +71,12 @@ const Authentication = () => {
 
     try {
       if (isLogin) {
+        // Perform login
         await authAPI.login({ email: formData.email, password: formData.password });
+        // Navigate to dashboard on successful login
         navigate("/dashboard");
       } else {
+        // Perform registration
         await authAPI.register(formData);
         alert("Account created successfully. Please, sign in.");
         setIsLogin(true);
@@ -62,9 +88,11 @@ const Authentication = () => {
   };
 
   return (
+    // Main container for authentication page
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
       <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
 
+        {/* Left side branding (hidden on small screens) */}
         <div className="hidden md:flex w-1/2 bg-teal-700 text-white flex-col justify-center items-center p-10">
           <Activity size={64} className="mb-4" />
           <h1 className="text-3xl font-bold mb-2">EarlyCare Gateway</h1>
@@ -74,20 +102,25 @@ const Authentication = () => {
           </p>
         </div>
 
+        {/* Right side form */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
+          {/* Form title with icon */}
           <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             {isLogin ? <LogIn className="text-teal-600" /> : <UserPlus className="text-teal-600" />}
             {isLogin ? "Welcome Back" : "New Doctor"}
           </h2>
 
+          {/* Display validation or server errors */}
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded text-sm">
               {error}
             </div>
           )}
 
+          {/* Authentication form */}
           <form onSubmit={handleSubmit} className="space-y-4">
 
+            {/* Registration-specific fields */}
             {!isLogin && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -121,6 +154,7 @@ const Authentication = () => {
               </div>
             )}
 
+            {/* Email input */}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                 Email <span className="text-red-500">*</span>
@@ -136,6 +170,7 @@ const Authentication = () => {
               </div>
             </div>
 
+            {/* Password input */}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                 Password <span className="text-red-500">*</span>
@@ -151,6 +186,7 @@ const Authentication = () => {
               </div>
             </div>
 
+            {/* Submit button */}
             <button
               type="submit"
               className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold p-3 rounded-lg transition duration-200 shadow-md mt-4"
@@ -159,6 +195,7 @@ const Authentication = () => {
             </button>
           </form>
 
+          {/* Toggle between login and registration */}
           <div className="mt-6 text-center text-sm text-gray-600">
             {isLogin ? "Don't have an account? " : "Already registered? "}
             <button
@@ -174,4 +211,5 @@ const Authentication = () => {
   );
 };
 
+// Export the Authentication component
 export default Authentication;
