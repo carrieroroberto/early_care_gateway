@@ -117,6 +117,8 @@ Copy the generated key and paste it into your *.env* file under *SECRET KEY*. If
     EXPLAINABLE_AI_URL = http://xai_service:8000/explainable_ai
     AUDIT_URL = http://audit_service:8000/audit
 
+    REACT_APP_API_URL = http://localhost:8002/gateway
+
 **3. Run the system**
 
 You can start the system using the *run.bat* (Windows) or *run.sh* (macOS/Linux) scripts, that automatically launch the services and run automated tests. Alternatively, you may manually start the system with:

@@ -1,0 +1,162 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{parskip}
+
+\geometry{margin=1in}
+
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{keywordcolor}{rgb}{0.36,0.54,0.66}
+
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+}
+
+\usepackage[hidelinks]{hyperref}
+
+\title{Early Care Gateway}
+\author{Execution Instructions}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Prerequisites}
+Prior to running the project, ensure that your system meets the following software and hardware requirements:
+
+\begin{itemize}
+    \item \textbf{Python 3}: Generate the JWT secret key
+    \item \textbf{Pip}: Install testing dependencies
+    \item \textbf{Docker (and WSL for Windows)}: Build containers
+    \item \textbf{Docker Compose V2}: Deploy the multi-container system
+    \item \textbf{Git}: Clone the repository
+    \item \textbf{At least 2 GB of Disk Space}: Host AI models and system components
+    \item \textbf{Recommended at least 8 GB RAM}: Ensure stable execution
+\end{itemize}
+
+Verify that the tools are correctly installed:
+
+\begin{lstlisting}[language=bash]
+git --version
+python --version
+pip --version
+wsl --version   # Windows only
+docker --version
+docker compose version
+\end{lstlisting}
+
+\section{Getting Started (Step-by-Step)}
+\subsection*{1. Clone the Repository}
+\addcontentsline{toc}{subsection}{1. Clone the Repository}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/carrieroroberto/early_care_gateway
+cd early_care_gateway
+\end{lstlisting}
+
+\subsection*{2. Configure Environment Variables}
+\addcontentsline{toc}{subsection}{2. Configure Environment Variables}
+The file \texttt{.env.example} serves as a template for the environment configuration required by the system.  
+Rename it to \texttt{.env}, or create a new \texttt{.env} file and fill it with the correct values for your setup (e.g. database user and password).
+
+\subsubsection*{Generate Keys}
+If Python is installed on your machine, you can generate a secure SHA256 secret key using:
+
+\begin{lstlisting}[language=bash]
+python secret_key_generator.py
+\end{lstlisting}
+
+Copy the generated key and paste it into your \texttt{.env} file under \texttt{SECRET\_KEY}.
+
+If you already have a Gemini API key, place it under \texttt{GOOGLE\_API\_KEY}.  
+Otherwise, you can obtain a free API key by visiting  
+\href{https://aistudio.google.com/app/api-keys}{Google AI Studio}.  
+After logging in and creating a project, you will be able to generate your personal API key.
+
+\subsubsection*{Example .env Configuration}
+Your \texttt{.env} file should look similar to the following:
+
+\begin{lstlisting}
+# PostgreSQL database connection settings
+POSTGRES_HOST = postgres
+POSTGRES_USER = earlycaregateway
+POSTGRES_PASSWORD = your_password
+POSTGRES_DB = earlycaregateway
+POSTGRES_PORT = 5432
+
+# pgAdmin credentials
+PGADMIN_EMAIL = admin@earlycaregateway.com
+PGADMIN_PASSWORD = your_password
+
+# Application secret key
+SECRET_KEY = your_secret_key
+
+# External API keys
+GOOGLE_API_KEY = your_api_key
+
+# Microservices URLs (internal Docker network addresses)
+GATEWAY_URL = http://gateway:8000/gateway
+AUTHENTICATION_URL = http://auth_service:8000/authentication
+DATA_PROCESSING_URL = http://data_service:8000/data_processing
+EXPLAINABLE_AI_URL = http://xai_service:8000/explainable_ai
+AUDIT_URL = http://audit_service:8000/audit
+
+# Frontend application settings
+REACT_APP_API_URL = http://localhost:8002/gateway
+\end{lstlisting}
+
+\subsection*{3. Run the System}
+\addcontentsline{toc}{subsection}{3. Run the System}
+You can start the system using \texttt{the run.bat} (Windows) or \texttt{run.sh} (macOS/Linux) scripts, that automatically launch the services and run automated integration tests.
+
+Alternatively, you may manually start the system with:
+
+\begin{lstlisting}[language=bash]
+docker compose up --build
+\end{lstlisting}
+
+This command will:
+\begin{itemize}
+    \item Build all Docker images (Backend, Frontend, Database)
+    \item Start the containers
+    \item Connect services through networks and volumes
+\end{itemize}
+
+\subsection*{4. Use the System}
+\addcontentsline{toc}{subsection}{4. Use the System}
+Access the web application at:
+
+\begin{center}
+\texttt{http://localhost:3000}
+\end{center}
+
+You may also use an API client, such as Postman, to interact directly with the API endpoints following the provided documentation.
+
+\section{Troubleshooting}
+
+\begin{itemize}
+    \item Monitor logs to verify that all services start correctly:  
+\begin{lstlisting}[language=bash]
+docker compose logs -f
+\end{lstlisting}
+    \item Ensure no other applications are using ports required by the system.
+    \item If Docker images fail to build, try stopping and removing existing containers and volumes using:  
+\begin{lstlisting}[language=bash]
+docker compose down -v
+\end{lstlisting}
+    \item On Linux systems, Docker commands may require \texttt{sudo}.
+    \item Access pgAdmin at \texttt{http://localhost:8080} using the credentials provided in your \texttt{.env} file.
+\end{itemize}
+
+\end{document}

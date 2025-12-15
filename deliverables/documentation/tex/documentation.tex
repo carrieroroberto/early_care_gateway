@@ -1,0 +1,605 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\geometry{margin=1in}
+
+\definecolor{jsonbg}{rgb}{0.95,0.95,0.95}
+\lstdefinelanguage{json}{
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{jsonbg}
+}
+
+\definecolor{sqlbg}{rgb}{0.97,0.97,0.97}
+
+\lstdefinelanguage{SQL}{
+    morekeywords={
+        SELECT, FROM, WHERE, AND, OR, INSERT, INTO, VALUES,
+        UPDATE, DELETE, CREATE, TABLE, IF, NOT, EXISTS,
+        PRIMARY, KEY, DEFAULT, CURRENT_TIMESTAMP, INTEGER,
+        VARCHAR, SERIAL, TIMESTAMP
+    },
+    sensitive=false,
+    morecomment=[l]{--},
+    morestring=[b]',
+}
+
+\lstdefinestyle{sqlstyle}{
+    language=SQL,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    stringstyle=,
+    commentstyle=,
+    backgroundcolor=\color{sqlbg},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false
+}
+
+\title{EarlyCare Gateway}
+\author{System Documentation}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+This documentation describes the EarlyCare Gateway system, in terms of API endpoints, database architecture and deployment techniques.
+
+It follows a microservices architecture, with a Gateway, an Authentication Service, a Data Processing Service, an Explainable AI Service, and an Audit Service, according to the Figure \ref{fig:architecture} below.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{diagram.png}
+    \caption{System Architecture Overview}
+    \label{fig:architecture}
+\end{figure}
+
+Communication between services uses JSON format for requests and responses. Authentication is handled with JSON Web Tokens (JWT), and error handling uses standard HTTP status codes with JSON payloads.
+
+\subsection{Swagger OpenAPI Documentation}
+FastAPI automatically generates interactive API documentation accessible at \texttt{/docs}. This interface allows to inspect all endpoints, view request and response schemas, and perform tests directly from the browser.
+
+\subsection{Status and Error Codes (RFC 7807)}
+All the API endpoints illustrated in this documentation follow the RFC 7807 standard for error format and status codes, as shown in Table \ref{table-errors}.
+
+\begin{longtable}{|l|p{10cm}|}
+\hline
+\textbf{Status} & \textbf{Description} \\
+\hline
+200 OK & Success \\
+201 Created & Resource successfully created \\
+400 Bad Request & Invalid input, missing parameters \\
+401 Unauthorized & Invalid/expired JWT or credentials \\
+404 Not Found & Resource not found \\
+\hline
+\caption{Status and Error Codes Overview}
+\label{table-errors}
+\end{longtable}
+
+\subsection{Project Structure}
+The following is the high-level structure of the EarlyCare Gateway project (in-depth example of one microservice).
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+earlycaregateway/
++-- backend/
+|   +-- authentication/
+|   |   +-- app/
+|   |   |   +-- models/
+|   |   |   +-- services/
+|   |   |   +-- schemas/
+|   |   |   +-- routes/
+|   |   |   +-- utils/
+|   |   |   +-- main.py
+|   |   +-- Dockerfile
+|   |   +-- requirements.txt
+|   +-- gateway/
+|   +-- data_processing/
+|   +-- explainable_ai/
+|   +-- audit/
++-- frontend/
+|   +-- public/
+|   |-- src/
+|   +-- Dockerfile
++-- docker-compose.yaml
++-- .env
++-- run.bat (run.sh)
+\end{lstlisting}
+
+\begin{itemize}
+    \item \textbf{backend/}: Contains all microservices (Gateway, Authentication, Data Processing, Explainable AI, Audit)
+    \item \textbf{frontend/}: React-based UI application
+    \item \textbf{docker-compose.yaml}: Orchestrates services for local deployment
+    \item \textbf{Dockerfile}: Base image and build instructions
+    \item \textbf{requirements.txt}: Python dependencies
+    \item \textbf{.env}: Environment variables for configuration
+    \item \textbf{run.bat/run.sh}: All-in-one system startup script
+\end{itemize}
+
+\section{User Endpoints}
+\subsection{POST /register}
+\begin{itemize}
+    \item \textbf{Purpose:} Register a new doctor
+    \item \textbf{Authentication:} None
+    \item \textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "name": "Mario",
+  "surname": "Rossi",
+  "email": "mario.rossi@email.com",
+  "password": "RossiMarioPassword25"
+}
+\end{lstlisting}
+    \item \textbf{Response Body (success):}
+\begin{lstlisting}[language=json]
+{
+  "message": "Doctor registered successfully"
+  "doctor_id": 1
+}
+\end{lstlisting}
+    \item \textbf{Response Body (error):}
+\begin{lstlisting}[language=json]
+{
+  "error": "Email already in use"
+}
+\end{lstlisting}
+
+    \item \textbf{Status Codes:}
+    \begin{itemize}
+        \item 201 Created -- registration successful
+        \item 400 Bad Request -- invalid input or email already exists
+    \end{itemize}
+    \item \textbf{Flow Notes:}
+    \begin{itemize}
+        \item Gateway forwards to Authentication Service
+        \item Authentication Service hashes password and creates unique \texttt{doctor\_id}
+        \item Asynchronous notification sent to Audit Service
+    \end{itemize}
+\end{itemize}
+
+\subsection{POST /login}
+\begin{itemize}
+    \item \textbf{Purpose:} Authenticate doctor and issue JWT
+    \item \textbf{Authentication:} None
+    \item \textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "email": "mario.rossi@email.com",
+  "password": "RossiMarioPassword25"
+}
+\end{lstlisting}
+    \item \textbf{Response Body (success):}
+\begin{lstlisting}[language=json]
+{
+  "message": "Doctor logged in successfully",
+  "token": "jwt_token"
+}
+\end{lstlisting}
+    \item \textbf{Response Body (error):}
+\begin{lstlisting}[language=json]
+{
+  "error": "Invalid credentials"
+}
+\end{lstlisting}
+    \item \textbf{Status Codes:}
+    \begin{itemize}
+        \item 200 OK -- login successful
+        \item 401 Unauthorized -- invalid credentials
+    \end{itemize}
+    \item \textbf{Flow Notes:}
+    \begin{itemize}
+        \item JWT contains \texttt{doctor\_id, name, surname} in payload, signed with SHA256 secret
+        \item Gateway forwards token to UI for subsequent requests
+        \item Audit Service notified asynchronously
+    \end{itemize}
+\end{itemize}
+
+\subsection{POST /analyse}
+\begin{itemize}
+    \item \textbf{Purpose:} Execute diagnosis
+    \item \textbf{Authentication:} JWT required (\texttt{Authorization: Bearer <JWT>})
+    \item \textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "strategy": "text"/"img_rx"/"img_skin"/"numeric"/"signal",
+  "patient_hashed_cd": "hash_string",
+  "raw_data": "serialized_data_or_b64"
+}
+\end{lstlisting}
+    \item \textbf{Response Body (success):}
+\begin{lstlisting}[language=json]
+{
+  "message": "Report saved into the database successfully",
+  "report":
+  {
+    "id": 1,
+    "doctor_id": 3,
+    "patient_hashed_cf": "hash",
+    "processed_data_id": 5,
+    "created_at": "2025-12-11  15:10:00",
+    "strategy": "text",
+    "diagnosis": "Cardiovascular / Pulmonary: Flu",
+    "confidence": 0.82,
+    "explanation": "Cough and cold are characteristic symptoms of the flu."
+  }
+}
+\end{lstlisting}
+    \item \textbf{Response Body (error):}
+\begin{lstlisting}[language=json]
+{
+  "error": "Invalid token"
+}
+\end{lstlisting}
+    \item \textbf{Status Codes:}
+    \begin{itemize}
+        \item 200 OK -- analysis completed
+        \item 400 Bad Request -- invalid/missing data
+        \item 401 Unauthorized -- invalid or expired JWT
+    \end{itemize}
+    \item \textbf{Flow Notes:}
+    \begin{itemize}
+        \item Gateway validates JWT via Authentication Service
+        \item Gateway sends data to Data Processing Service
+        \item Data Processing Service saves processed data in its database and returns \texttt{processed\_data\_id}
+        \item Explainable AI retrieves data and executes model
+        \item Diagnosis saved in reports database
+        \item Audit Service notified asynchronously
+    \end{itemize}
+\end{itemize}
+
+\subsection{GET /reports}
+\begin{itemize}
+    \item \textbf{Purpose:} Retrieve all reports for the doctor, optionally filtered by patient
+    \item \textbf{Authentication:} JWT required (\texttt{Authorization: Bearer <JWT>})
+    \item \textbf{Query Parameters (optional):} \texttt{patient\_cf}
+    \item \textbf{Response Body:}
+\begin{lstlisting}[language=json]
+  {
+    "message": "Report(s) retrieved successfully",
+    "reports": [
+        {
+            "id": 1,
+            "doctor_id": 3,
+            "patient_hashed_cf": "hash",
+            "processed_data_id": 5,
+            "created_at": "2025-12-11 20:00:00",
+            "strategy": "text",
+            "diagnosis": "Cardiovascular / Pulmonary: Flu",
+            "confidence": 0.82,
+            "explanation": "Cough and cold are characteristic symptoms of the flu."
+        },
+        {
+            "id": 2,
+            "doctor_id": 1,
+            "patient_hashed_cf": "hash2",
+            "processed_data_id": 4,
+            "created_at": "2025-12-12  10:30:00",
+            "strategy": "signal",
+            "diagnosis": "Regular ECG",
+            "confidence": 0.90,
+            "explanation": "No signs of disease based on the ECG provided."
+        },
+        ...
+    ]
+  }
+\end{lstlisting}
+    \item \textbf{Status Codes:}
+    \begin{itemize}
+        \item 200 OK -- reports retrieved
+        \item 401 Unauthorized -- invalid JWT
+        \item 404 Not Found -- no reports found
+    \end{itemize}
+    \item \textbf{Flow Notes:}
+    \begin{itemize}
+        \item Gateway validates JWT and extracts \texttt{doctor\_id}
+        \item Calls Explainable AI to query reports database with optional \texttt{hashed\_patient\_cf}
+    \end{itemize}
+\end{itemize}
+
+\section{Internal Endpoints}
+Authentication Service exposes POST /validate to verify JWT and /register, /login endpoints for login and registration.
+Data Processing Service exposes POST /process to process raw data and GET /data/{processed-data-id} to retrieve processed data.
+Explainable AI Service exposes POST /analyse for performing diagnosis and GET /reports[?patient\_id=id] to retrieve reports.
+Audit Service exposes POST /log to record events from other services.
+
+\subsection{Authentication Service}
+\subsubsection*{POST authentication/register}
+This internal endpoint is invoked by the Gateway when a registration request is received. It creates a new doctor account, hashes the password, stores the record in the \texttt{doctors} table, and logs the operation.
+
+Example request:
+\begin{lstlisting}[language=json]
+{
+  "name": "Mario",
+  "surname": "Rossi",
+  "email": "mario.rossi@email.com",
+  "password": "RossiMarioPassword25"
+}
+\end{lstlisting}
+
+Example response:
+\begin{lstlisting}[language=json]
+{
+  "message": "Doctor registered successfully"
+  "doctor_id": 1,
+}
+\end{lstlisting}
+
+If the email already exists, the service returns a 400 status with an error message.
+
+\subsubsection*{POST authentication/login}
+This endpoint validates credentials during login. If the email and password match an existing record, the service generates and returns a JWT.
+
+Example request:
+\begin{lstlisting}[language=json]
+{
+  "email": "mario.rossi@mail.com",
+  "password": "RossiMarioPassword25"
+}
+\end{lstlisting}
+
+Example successful response:
+\begin{lstlisting}[language=json]
+{
+  "message": "Doctor logged in successfully"
+  "token": "jwt_token"
+}
+\end{lstlisting}
+
+If authentication fails, it returns a 401 error with a corresponding message, and the event is logged.
+
+\subsubsection*{POST authentication/validate}
+This endpoint verifies the validity of a JWT sent by the Gateway. The request must include the token in JSON form. If the token is valid, the service returns the associated doctor identifier. Otherwise, it returns an error.
+
+Example request:
+\begin{lstlisting}[language=json]
+{
+  "token": "jwt_token"
+}
+\end{lstlisting}
+
+Example successful response:
+\begin{lstlisting}[language=json]
+{
+  "message": "Token validated successfully"
+  "doctor_id": id
+}
+\end{lstlisting}
+
+Example error response:
+\begin{lstlisting}[language=json]
+{
+  "error": "Invalid or expired token"
+}
+\end{lstlisting}
+
+Status codes include 200 for valid tokens, 400 for missing or malformed tokens, and 401 for invalid or expired tokens. After every validation attempt, the Authentication Service notifies the Audit Service about the outcome to ensure traceability.
+
+\subsection{Audit Service}
+The Audit Service is responsible for recording and retrieving logs from all microservices. Its endpoints follow a structured JSON format and operate asynchronously. It implements an Observer Pattern that decouples monitoring concerns from core functionalities.
+
+\subsubsection*{POST /audit/log}
+This endpoint receives log entries from other services. Each log includes the service name, the type of event, a description, and optional identifiers related to doctors, processed data, or reports.
+
+Example request:
+\begin{lstlisting}[language=json]
+{
+  "service": "authentication",
+  "event": "register_success",
+  "description": "Doctor registered successfully",
+  "doctor_id": 1,
+  "patient_hashed_cf": "null",
+  "report_id": "null",
+  "data_id": "null"
+}
+\end{lstlisting}
+
+Example response:
+\begin{lstlisting}[language=json]
+{
+  "message": "Log created successfully",
+  "log_id": 100,
+  "created_at": "2025-11-25 12:00:00"
+}
+\end{lstlisting}
+
+Typical status codes include 201 when logs are successfully written and 400 for malformed payloads.
+
+\subsubsection*{GET /audit/logs}
+This endpoint allows internal retrieval of all stored logs. It supports optional query parameters such as \texttt{service}, \texttt{event}, \texttt{doctor\_id} or \texttt{patient\_hashed\_cf} to filter results.
+
+Example response:
+\begin{lstlisting}[language=json]
+{
+    "message": "Log(s) retrieved successfully",
+    "logs": [
+        {
+            "id": 1,
+            "service": "authentication",
+            "event": "register_success",
+            "description": "Doctor registered",
+            "doctor_id": 1
+            "patient_hashed_cf": null,
+            "report_id": null,
+            "data_id": null,
+            "created_at": "2025-12-09 11:30:00"
+        },
+        ...
+    ]
+}
+\end{lstlisting}
+
+If no logs match the query, the service returns an empty array with status 200. In case of internal errors, a 500 error is produced with a diagnostic message.
+
+\subsection*{Input Validation Tables}
+
+\subsubsection*{POST /register}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} \\
+\hline
+name & string & Required, min 2 chars, whitespace stripped \\
+surname & string & Required, min 2 chars, whitespace stripped \\
+email & string & Required, valid email format \\
+password & string & Required, 8-100 chars, whitespace stripped \\
+\hline
+\end{tabular}
+
+\subsubsection*{POST /login}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} \\
+\hline
+email & string & Required, valid email format \\
+password & string & Required, min 1 char \\
+\hline
+\end{tabular}
+
+\subsubsection*{POST /analyse}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} \\
+\hline
+strategy & string & Required, "text"/"img\_rx"/"img\_skin"/"numeric"/"signal" \\
+patient\_hashed\_cf & string & Required, non-empty \\
+raw\_data & string & Required, serialized JSON or Base64 \\
+\hline
+\end{tabular}
+
+\subsubsection*{GET /reports}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Parameter} & \textbf{Type} & \textbf{Constraints} \\
+\hline
+patient\_hashed\_cf & string & Optional, non-empty if provided \\
+\hline
+\end{tabular}
+
+\subsubsection*{POST /audit/log}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} \\
+\hline
+service & string & Required, 1-50 chars \\
+event & string & Required, 1-50 chars \\
+description & string & Required, 1-100 chars \\
+doctor\_id & int & Optional, \\
+patient\_hashed\_cf & string & Optional, 1-255 chars \\
+report\_id & int & Optional \\
+data\_id & int & Optional \\
+\hline
+\end{tabular}
+
+
+\section{Database}
+The persistence layer of the system is built upon a relational database to ensure structured data storage and referential integrity.
+
+\subsection{PostgreSQL Architecture}
+The chosen database engine is PostgreSQL. To balance the architectural principles of microservice isolation with the practical need for deployment simplicity in a testing environment, a shared database pattern was adopted. While there is a single physical database instance, the architecture maintains a logical separation of concerns. Each microservice is responsible for a distinct set of entities, simulating the boundaries of a distributed system.
+
+\subsection{Tables Schema}
+The schema is composed of four primary tables, with some logical relationships among them.
+
+\begin{lstlisting}[style=sqlstyle, caption={PostgreSQL Schema Definition}, label={lst:db_schema}]
+CREATE TABLE IF NOT EXISTS doctors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    surname VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS processed_data (
+    id SERIAL PRIMARY KEY,                 
+    type VARCHAR(20) NOT NULL,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    doctor_id INTEGER NOT NULL,
+    patient_hashed_cf VARCHAR(255) NOT NULL,
+    processed_data_id INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    strategy VARCHAR(255) NOT NULL,
+    diagnosis VARCHAR(255) NOT NULL,
+    confidence FLOAT NOT NULL,
+    explanation TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    service VARCHAR(50) NOT NULL,
+    event VARCHAR(50) NOT NULL,
+    description VARCHAR(100) NOT NULL,
+    doctor_id INTEGER,
+    patient_hashed_cf VARCHAR(255),
+    data_id INTEGER,
+    report_id INTEGER
+);
+\end{lstlisting}
+
+\section{Deployment}
+Each backend microservice (Authentication, Audit, XAI, Data Processing, Gateway) shares a common build strategy defined in the \texttt{Dockerfile}. The base image utilized is \texttt{python:3.11-slim}.
+
+\subsection{Dockerfile}
+To accelerate build times and leverage Docker's layer caching mechanism, the build process is split into two distinct stages:
+\begin{enumerate}
+    \item \textbf{Dependency installation:} The \texttt{requirements.txt} file is copied, and \texttt{pip install} is executed.
+    \item \textbf{Source code copy:} The application source code is copied only after the dependencies are installed.
+\end{enumerate}
+This strategy ensures that if the source code changes but the dependencies remain the same, Docker reuses the cached dependency layer, reducing the build time during iterative development.
+
+\subsection{Docker Compose}
+Service orchestration is defined in the \texttt{docker-compose.yaml} file, which describes a complete environment composed of eight interconnected services:
+
+\begin{itemize}
+    \item \textbf{External services}:
+    \begin{itemize}
+        \item \texttt{postgres}: The persistent relational database (PostgreSQL), initialized via scripts mapped to the \texttt{/docker-entrypoint-initdb.d} volume.
+        \item \texttt{pgadmin}: A web-based administration interface for database management, accessible on port 8080.
+    \end{itemize}
+    
+    \item \textbf{Backend services}:
+    All backend services are configured with bind-mounts (e.g., \texttt{./backend/gateway:/app}) and run with the \texttt{--reload} flag to enable hot-reloading.
+    \begin{itemize}
+        \item \texttt{auth\_service}: Identity management (Host Port: 8000).
+        \item \texttt{audit\_service}: Asynchronous logging (Host Port: 8001).
+        \item \texttt{gateway}: System entry point (Host Port: 8002).
+        \item \texttt{xai\_service}: Explainable AI engine (Host Port: 8003).
+        \item \texttt{data\_service}: Data processing unit (Host Port: 8004).
+    \end{itemize}
+    
+    \item \textbf{Frontend}:
+    \begin{itemize}
+        \item \texttt{ui}: A React application served on port 3000, dynamically configured via the \texttt{REACT\_APP\_API\_URL} environment variable.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Environment Configuration}
+Adhering to security best practices, sensitive configuration is strictly decoupled from the code. The \texttt{.env} file centralizes environment variables, including database credentials (\texttt{POSTGRES\_USER}, \texttt{POSTGRES\_PASSWORD}), security keys (\texttt{SECRET\_KEY}, \texttt{GOOGLE\_API\_KEY}), and internal service discovery URLs.
+
+\subsection{Automated Pipeline}
+To streamline testing and system startup, automation scripts have been provided for both Windows (\texttt{run.bat}) and Unix-like systems (\texttt{run.sh}).
+
+\end{document}
