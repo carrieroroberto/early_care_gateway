@@ -179,6 +179,7 @@ const Analysis = () => {
 
       console.log("Sending to gateway:", payload);
       resetAllInputs();
+      setPatientCf("");
 
       const response = await aiAPI.analyse(payload);
       setResult(response.data.report);
@@ -197,7 +198,6 @@ const Analysis = () => {
     setPreviewUrl(null);
     setSelectedFile(null);
     setCardioData(initialCardioState);
-    setPatientCf("");
   };
 
   return (
