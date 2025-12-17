@@ -1,0 +1,40 @@
+\def\dept{DEPARTMENT OF ELECTRICAL AND INFORMATION ENGINEERING}
+\def\course{Master's Degree in Computer Science Engineering}
+\def\title{EarlyCare Gateway: A Microservices Architecture for Clinical Decision\\Support with Explainable AI}
+\def\author{Roberto Carriero\\
+        Luca Cianci\\[5pt]
+        Luca Serio
+}
+\def\prof{Prof.ssa Marina Mongiello}
+\def\subject{Software Architecture and Pattern Design}
+\def\annoacc{2025 - 2026}
+\def\beforecandidate{Students}
+\def\beforetitle{Final Group Project in\\}
+\def\beforeprof{Supervisor}
+\def\beforeannoacc{Academic Year }
+
+\begin{titlepage}
+    \begin{tikzpicture}[remember picture,overlay]
+        \centering
+        % Logo Poliba
+        \node[yshift=-6 cm] (logo) at (current page.north) {\includegraphics[width=0.35\linewidth]{images/logo.png}};
+        % Nome università
+        \node[text width=50em,yshift=0.25cm, align = center, below = of logo](poliba){\bfseries \Large POLITECNICO DI BARI};
+        % Dipartimento e corso
+        \node[text width=40em, align = center, yshift=.55cm,below = of poliba](course){\normalsize \dept \\ \normalsize \textbf{\course}};
+        % Linea orizzontale
+        \node[text width=35em,align = center,  yshift=1.2cm,below = of course](line){\par\noindent\rule{\textwidth}{0.4pt}};
+        % Tipo di tesi
+        \node[text width=40em, align = center, yshift=.55cm,below = of line](lia){\beforetitle\subject};
+        % Titolo tesi
+        \node[text width=40em, align = center, yshift=-0.5cm,below = of lia](title){\bfseries \fontsize{21pt}{20pt}\selectfont \title\par};
+        % Supervisore
+        \node[text width=35em, align = left, yshift=-0.75cm,below = of title](supervisor){\large \beforeprof \\ \textbf{\prof}};
+        % Candidato
+        \node[text width=35em, align = right, yshift=0cm,below = of supervisor](candidate){\large \beforecandidate\\ \textbf{\author}};
+        % Linea orizzontale finale
+        \node[text width=35em,align = center,  yshift= 0cm,below = of candidate](line2){\par\noindent\rule{\textwidth}{0.4pt}};
+        % Anno accademico
+        \node[text width=50em, align = center, yshift=0.5cm,below = of line2](year){\beforeannoacc\annoacc};
+    \end{tikzpicture}
+\end{titlepage}

@@ -1,0 +1,309 @@
+\chapter{Testing and Results}
+\label{chap:testing_results}
+This chapter presents the tests executed on the systems and the experimental results obtained from the validation of the AI models.
+
+\section{Microservices Integration Test}
+Given the asynchronous nature of the microservices (built with async FastAPI), the testing framework required tools capable of handling non-blocking I/O operations effectively.
+
+The testing suite relies on the following key libraries:
+\begin{itemize}
+    \item \textbf{pytest}: The primary testing framework, chosen for its simplicity and powerful fixture system.
+    \item \textbf{pytest-asyncio} and anyio: Essential plugins that allow pytest to execute coroutines and manage asynchronous event loops, enabling the testing of async def endpoints.
+    \item \textbf{httpx}: A modern, async-capable HTTP client used to send requests to the microservices. It mirrors the production behavior of the Gateway service, ensuring that tests simulate inter-service communication.
+\end{itemize}
+
+The tests are designed as Integration Tests, verifying the interaction between the application logic, the database, and the external API endpoints. The following subsections detail the scenarios covered.
+
+The \texttt{test\_register\_login\_validate\_flow} validates the complete user lifecycle. It ensures that a doctor can register with unique credentials, login to receive a valid JWT, and that duplicate email registrations are correctly rejected with a 400 Bad Request status.
+
+The data processing tests verify that raw data (text, signals, or images) is accepted, processed, and retrieved. The \texttt{test\_process\_and\_retrieve\_flow} confirms that the system returns a valid \texttt{processed\_data\_id}, which is required for the subsequent analysis steps.
+
+The most complex test scenario, \texttt{test\_analyse\_and\_get\_reports\_flow}, simulates the core of the system. It orchestrates a sequence of actions across multiple services:
+\begin{enumerate}
+    \item POST raw data to the Data Service.
+    \item Use the returned ID to request an analysis from the XAI Service.
+    \item Verify that the XAI Service returns a diagnosis and an explanation.
+    \item Query the \texttt{/reports} endpoint to ensure the result was persisted and is retrievable by the doctor.
+\end{enumerate}
+
+Finally, the \texttt{test\_create\_log} ensures that operational events are captured. It validates that logs can be filtered by specific query parameters.
+
+The entire testing process is automated via a custom script. This script orchestrates the full lifecycle of the test session, minimizing manual intervention and handling the synchronization between the container startup and the test runner.
+
+The execution pipeline performs the following steps sequentially:
+\begin{enumerate}
+    \item \textbf{Start the system} It initializes the environment using \texttt{Docker-Compose}, ensuring that the latest version of the code is containerized and running.
+    \item \textbf{Check the services:} The script implements a polling mechanism to verify that each microservice is fully operational. It systematically pings the Swagger UI endpoint (\texttt{/docs}) of every service (Audit, Auth, Data, XAI, Gateway) and waits for an HTTP 200 OK response. This eliminates race conditions where the test suite might attempt to connect to a service that is still initializing.
+    \item \textbf{Manage the dependencies:} It automatically creates a dedicated Python virtual environment (venv) and installs the specific test dependencies defined in \texttt{requirements.txt}.
+    \item \textbf{Run the tests:} Once the infrastructure is healthy and dependencies are ready, it launches the \texttt{pytest} suite.
+\end{enumerate}
+
+\section{Experimental Setup and Metrics}
+\label{sec:setup_metrics}
+The performance evaluation focuses on measuring the system's ability to correctly classify clinical data across different modalities: text, images, and structured data.
+
+The validation process was conducted using a hold-out strategy. The datasets were split into training (80\%) and validation/test sets (20\%) to ensure that the evaluation metrics reflect the model's generalization capabilities on unseen data.
+The training was performed on NVIDIA Tesla T4 GPUs to accelerate the fine-tuning of deep learning models (ClinicalBERT, CheXNet, EfficientNet).
+
+To comprehensively assess the performance, the following metrics were employed:
+
+\begin{itemize}
+    \item \textbf{Accuracy:} The ratio of correctly predicted observations to the total observations.
+    \item \textbf{Precision:} The ratio of correctly predicted positive observations to the total predicted positives. High precision relates to a low false positive rate.
+    \item \textbf{Recall (Sensitivity):} The ratio of correctly predicted positive observations to the all observations in the actual class. In a medical context, high recall is crucial to minimize missed diagnoses (False Negatives).
+    \item \textbf{F1-Score:} The harmonic mean of Precision and Recall. It is particularly useful for evaluating performance on imbalanced datasets, as it seeks a balance between precision and sensitivity.
+    \item \textbf{Confusion Matrix:} A tabular layout that visualizes the performance of the classifier, showing the discrepancies between predicted and actual labels to identify specific classes that are prone to misclassification.
+\end{itemize}
+
+\section{Textual Analysis Results (ClinicalBERT)}
+\label{sec:textual_results}
+
+The textual analysis module, based on the fine-tuned Bio\_ClinicalBERT model, was evaluated on the validation subset of the MTSamples dataset ($N=338$ samples). The model was tasked with classifying clinical notes into 8 distinct medical specialties.
+
+\subsection{Global Performance}
+The model achieved an overall Accuracy of 88\% on the validation set. The weighted average F1-Score was also 0.88, indicating consistent performance across the majority of classes despite some imbalance in the dataset distribution.
+
+\begin{table}[H]
+    \centering
+    \caption{Detailed Classification Report for ClinicalBERT on the Validation Set.}
+    \label{tab:bert_stats}
+    \renewcommand{\arraystretch}{1.2} 
+    \small 
+    \begin{tabular}{lcccc}
+        \hline
+        \textbf{Medical Specialty} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+        \hline
+        Cardiovascular / Pulmonary & 0.92 & 0.96 & 0.94 & 74 \\
+        Neurology & 0.77 & 0.76 & 0.76 & 45 \\
+        Urology & 0.93 & 0.88 & 0.90 & 32 \\
+        Orthopedic & 0.83 & 0.87 & 0.85 & 71 \\
+        Obstetrics / Gynecology & 0.94 & 0.97 & 0.95 & 32 \\
+        Hematology - Oncology & 0.80 & 0.67 & 0.73 & 18 \\
+        Gastroenterology & 0.96 & 0.93 & 0.95 & 46 \\
+        ENT - Otolaryngology & 0.89 & 0.85 & 0.87 & 20 \\
+        \hline
+        Accuracy & & & 0.88 & 338 \\
+        Macro Avg & 0.88 & 0.86 & 0.87 & 338 \\
+        Weighted Avg & 0.88 & 0.88 & 0.88 & 338 \\
+        \hline
+    \end{tabular}
+\end{table}
+\subsection{Class-wise Analysis}
+As detailed in Table \ref{tab:bert_stats} and visualized in the histograms in Figure \ref{fig:bert_histo}, the model demonstrates varying degrees of effectiveness depending on the specialty:
+
+\begin{itemize}
+    \item \textbf{High Performance:} The model performed well in \textit{Obstetrics / Gynecology} (F1: 0.95) and \textit{Gastroenterology} (F1: 0.95). Notably, \textit{Cardiovascular / Pulmonary} achieved the highest Recall (0.96), meaning the system identified 96\% of all true cardiovascular cases, a critical factor for triaging life-threatening conditions.
+    \item \textbf{Challenges:} The lowest performance was observed in \textit{Hematology - Oncology} (F1: 0.73, Recall: 0.67). This drop can be attributed to the low support (only 18 samples in validation) and the fact that oncological symptoms often manifest systematically, overlapping with other organ-specific specialties.
+\end{itemize}
+
+\clearpage
+
+% --- Figura 1: Istogramma ---
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth, height=0.38\textheight, keepaspectratio]{images/BERT_ISTO.png}
+    \caption{Bar Chart comparing Precision, Recall, and F1-Score across Medical Specialties.}
+    \label{fig:bert_histo}
+\end{figure}
+
+
+\subsection{Error Analysis}
+The Confusion Matrix (Figure \ref{fig:bert_matrix}) provides deeper insight into the misclassifications.
+
+% --- Figura 2: Matrice di Confusione ---
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.85\textwidth, height=0.38\textheight, keepaspectratio]{images/BERT_MATRIX.png}
+    \caption{Confusion Matrix for the Textual Classification task.}
+    \label{fig:bert_matrix}
+\end{figure}
+
+The most significant confusion occurs between Neurology and Orthopedics.
+\clearpage
+
+\begin{itemize}
+    \item 9 Neurology cases were misclassified as Orthopedic.
+    \item 8 Orthopedic cases were misclassified as Neurology.
+\end{itemize}
+
+This confusion is explainable, as both specialties often deal with overlapping symptomatology such as pain, numbness, and motor dysfunction (e.g., back pain could be spinal/orthopedic or neurological).
+Conversely, classes with distinct lexicons, such as \textit{Urology} and \textit{Gastroenterology}, show very high diagonal values with minimal leakage into other categories.
+
+\section{Medical Imaging Results}
+\label{sec:imaging_results}
+
+This section evaluates the performance of the computer vision models. Due to the distinct nature of the tasks—Multi-Label classification for chest X-rays and Multi-Class classification for skin lesions—specific evaluation metrics and visualization techniques were adopted for each domain.
+
+\subsection{Chest X-Ray Analysis (CheXNet)}
+\label{subsec:chexnet_results}
+
+The performance of the DenseNet121-based model was assessed using the Area Under the Receiver Operating Characteristic Curve (AUC-ROC) for each of the 14 target pathologies. The AUC is the standard metric for multi-label medical diagnostics, as it measures the model's discriminative ability across all possible classification thresholds, which is critical for imbalanced datasets.
+
+\subsubsection{Quantitative Performance}
+The model achieved a Mean AUC of 0.8371, demonstrating strong generalization capabilities. Table \ref{tab:chexnet_auc} provides the detailed AUC scores for each pathology, sorted by performance.
+
+\begin{table}[H]
+    \centering
+    \caption{AUC-ROC Performance of the CheXNet model for the 14 Thoracic Pathologies.}
+    \label{tab:chexnet_auc}
+    \renewcommand{\arraystretch}{1.2}
+    \small
+    \begin{tabular}{lc|lc}
+        \hline
+        \textbf{Pathology} & \textbf{AUC Score} &  \textbf{Pathology} & \textbf{AUC Score} \\
+        \hline
+        Emphysema & 0.9143 & Fibrosis & 0.8155 \\
+        Edema & 0.9008 & Pleural Thickening & 0.8031 \\
+        Cardiomegaly & 0.8971 & Consolidation & 0.8016 \\
+        Pneumothorax & 0.8888 & Nodule & 0.7810 \\
+        Effusion & 0.8836 & Pneumonia & 0.7507 \\
+        Hernia & 0.8705 & Infiltration & 0.7208 \\
+        Mass & 0.8665 & & \\
+        Atelectasis & 0.8246 & MEAN AUC & 0.8371 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+As shown in the ROC Curves (Figure \ref{fig:chexnet_roc}) and the performance chart (Figure \ref{fig:chexnet_perf}), the system excels in detecting conditions with distinct visual features such as \textit{Emphysema} (0.91) and \textit{Edema} (0.90). The lower performance on \textit{Infiltration} (0.72) is consistent with medical literature, as this pathology presents diffuse and subtle radiological patterns that are challenging even for expert radiologists.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth, height=0.40\textheight, keepaspectratio]{images/CHEXNET_ROCCURVES.png}
+    \caption{ROC Curves for the 14 Findings in the ChestX-ray14 Dataset.}
+    \label{fig:chexnet_roc}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth, height=0.40\textheight, keepaspectratio]{images/CHEXNET_PERFORMANCE.png}
+    \caption{Bar Chart Ranking the AUC Scores by Pathology.}
+    \label{fig:chexnet_perf}
+\end{figure}
+
+\clearpage
+
+\subsection{Skin Lesion Diagnosis (EfficientNet)}
+\label{subsec:skin_results}
+
+For skin lesion classification, the primary objective was to maximize sensitivity (Recall) for malignant conditions, which are often underrepresented. The EfficientNet-B0 model, trained with a \textit{Weighted Cross-Entropy Loss}, achieved an overall Accuracy of 88\% on the test set ($N=2003$).
+
+\subsubsection{Class-wise Analysis}
+Table \ref{tab:skin_stats} details the precision, recall, and F1-score for each diagnostic category.
+
+\begin{table}[H]
+    \centering
+    \caption{Classification Report for the Skin Lesion Analysis task (Weighted).}
+    \label{tab:skin_stats}
+    \renewcommand{\arraystretch}{1.2}
+    \small
+    \begin{tabular}{lcccc}
+        \hline
+        \textbf{Diagnosis} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+        \hline
+        Melanocytic nevi & 0.95 & 0.92 & 0.93 & 1341 \\
+        Basal cell carcinoma & 0.87 & 0.84 & 0.86 & 103 \\
+        Vascular lesions & 0.77 & 0.96 & 0.86 & 28 \\
+        Dermatofibroma & 0.76 & 0.96 & 0.85 & 23 \\
+        Benign keratosis & 0.75 & 0.80 & 0.77 & 220 \\
+        Actinic keratoses & 0.69 & 0.74 & 0.71 & 65 \\
+        Melanoma & 0.69 & 0.73 & 0.71 & 223 \\
+        \hline
+        Accuracy & & & 0.88 & 2003 \\
+        Weighted Avg & 0.88 & 0.88 & 0.88 & 2003 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsubsection{Key Findings}
+\begin{itemize}
+    \item \textbf{Melanoma Detection:} The model achieved a Recall of 73\% for Melanoma. In a screening context, this sensitivity is vital to ensure that nearly 3 out of 4 malignant cases are flagged for biopsy, prioritizing patient safety over a slight increase in false positives (Precision 69\%).
+    \item \textbf{Rare Classes:} The impact of class weighting is evident in the \textit{Dermatofibroma} class (Recall 96\%) and \textit{Vascular lesions} (Recall 96\%), where the model correctly identified almost all cases despite their scarcity in the dataset.
+    \item \textbf{Robustness:} The majority class, \textit{Melanocytic nevi}, maintained excellent performance (F1 0.93), confirming that the model did not overfit to the minority classes.
+\end{itemize}
+
+\clearpage
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/SKIN_MATRIX.png}
+    \caption{Confusion Matrix for Skin Lesion Classification. Note the High Diagonal Values for Nevi and the Effective Retrieval of Melanomas.}
+    \label{fig:skin_matrix}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=1\textwidth]{images/SKIN_CURVES.png}
+    \caption{Training Loss (Weighted) and Validation Accuracy curves, showing Stable Convergence over 12 Epochs.}
+    \label{fig:skin_curves}
+\end{figure}
+
+\section{Cardiovascular Risk Prediction (XGBoost)}
+\label{sec:structured_results}
+
+The assessment of cardiovascular risk using structured clinical data represents a critical component of the triage process. The XGBoost model, optimized via Grid Search, was evaluated on a test set of 184 patients derived from the UCI Heart Disease dataset.
+
+\subsection{Quantitative Performance}
+
+The model achieved an overall Accuracy of 82.1\%, a good result for a tabular medical dataset. The detailed classification report is presented in Table \ref{tab:heart_stats}.
+
+\begin{table}[H]
+    \centering
+    \caption{Classification Metrics for the Cardiovascular Risk Prediction task.}
+    \label{tab:heart_stats}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lcccc}
+        \hline
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+        \hline
+        Healthy (0) & 0.810 & 0.780 & 0.795 & 82 \\
+        Heart Disease (1) & 0.829 & 0.853 & 0.841 & 102 \\
+        \hline
+        Accuracy & & & 0.821 & 184 \\
+        Macro Avg & 0.819 & 0.817 & 0.818 & 184 \\
+        Weighted Avg & 0.820 & 0.821 & 0.820 & 184 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+A critical metric for this domain is the Recall for the Heart Disease class, which stands at 85.3\%. This indicates that the system successfully identifies the majority of patients at risk, minimizing false negatives (missed diagnoses), which could have clinical consequences.
+
+\subsection{Error Analysis}
+
+The Confusion Matrix (Figure \ref{fig:heart_matrix}) further illustrates the model's behavior:
+\begin{itemize}
+    \item \textbf{True Positives:} 87 patients correctly identified as at risk.
+    \item \textbf{False Negatives:} Only 15 cases were missed.
+    \item \textbf{False Positives:} 18 healthy patients were flagged as at risk. In a triage setting, this slight tendency to over-diagnose is acceptable as it prioritizes patient safety.
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/1_Confusion_Matrix.png}
+    \caption{Confusion Matrix for Cardiovascular Risk prediction. The Model shows a Balanced Performance with a Bias towards Sensitivity.}
+    \label{fig:heart_matrix}
+\end{figure}
+
+\subsection{Model Confidence and Interpretability}
+
+The probability distribution histogram (Figure \ref{fig:heart_probs}) reveals a bimodal distribution, meaning the model is confident in its predictions (most probabilities are close to 0 or 1), with few ambiguous cases around the 0.5 threshold.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.65\textwidth]{images/2_Histogram_Probs.png}
+    \caption{Distribution of Predicted Probabilities. The clear separation indicates Strong Model Confidence.}
+    \label{fig:heart_probs}
+\end{figure}
+
+Finally, the Feature Importance analysis (Figure \ref{fig:heart_feat}) confirms the clinical validity of the model. The most influential factors driving the predictions include:
+\begin{enumerate}
+    \item \textbf{Exercise Induced Angina:} The strongest predictor of heart disease.
+    \item \textbf{Chest Pain Type (\texttt{cp}):} Specifically atypical and non-anginal pain.
+    \item \textbf{ST Slope (\texttt{slope}):} An essential ECG marker during stress tests.
+\end{enumerate}
+These findings align perfectly with established cardiological knowledge, reinforcing trust in the AI's decision-making process.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.65\textwidth]{images/3_Feature_Importance.png}
+    \caption{Top 10 Most Important Features identified by XGBoost.}
+    \label{fig:heart_feat}
+\end{figure}

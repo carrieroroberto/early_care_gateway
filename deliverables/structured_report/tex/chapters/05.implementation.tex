@@ -1,0 +1,374 @@
+\chapter{Development and Deployment}
+This chapter describes the development methodology, organizational planning, implementation details, and deployment strategy adopted for the project.
+
+\section{Planning and Organization}
+Two main approaches guided the project workflow and organization: Agile methodology and Gantt chart planning.
+A Gantt chart, designed in Excel, was used to visualize the overall timeline of the project, helping to split tasks among the team members.
+
+Furthermore, the team adopted an Agile Kanban approach to manage tasks and iterations efficiently. The Kanban board, integrated in Microsoft Teams, facilitated task prioritization, progress tracking, and rapid adaptation to evolving requirements.
+
+\section{Development}
+The development phase focused on realizing the architecture and functional requirements while adhering to best practices for code quality, modularity, and testability.
+
+\subsection{Technology Stack and Tools}
+The project leveraged modern technologies suitable for web-based, AI-driven systems:
+\begin{itemize}
+    \item \textbf{Backend}: Python with FastAPI for building RESTful API.
+    \item \textbf{Frontend}: React for responsive and interactive user interface development.
+    \item \textbf{Data}: PostgreSQL database for data persistance.
+    \item \textbf{AI}: Pandas, Numpy, Scikit-Learn, XGBoost, Gemini Generative API for adding AI functionality.
+    \item \textbf{Testing}: Pytest for integration tests.
+    \item \textbf{Versioning}: Git and GitHub for collaboration.
+    \item \textbf{Deployment}: Docker and Docker-Compose for containerization and multi-container deployment.
+\end{itemize}
+
+\subsection{Class Diagrams}
+Each microservice was implemented with well-defined classes to encapsulate business logic. Design patterns discussed in Section \ref{sec:design-patterns} were applied to improve maintainability, flexibility, and testability.
+
+An overview of the UML class diagrams for all the services is reported below.
+
+\subsubsection{Gateway}
+To manage the complexity of interactions between the frontend and the distributed backend services, the Gateway component implements the Facade Design Pattern. The structural design of this component is shown in Figure \ref{fig:gat-class}.
+
+The core of this implementation is the \texttt{GatewayFacade} class, which serves as the single entry point for all client requests. This class decouples the external API consumers from the underlying microservices by aggregating three specialized interfaces.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/gat-class.png} 
+    \caption{UML Class Diagram of Gateway Service.}
+    \label{fig:gat-class}
+\end{figure}
+
+\begin{itemize}
+    \item \texttt{IAuthenticationClient}: This interface abstracts the communication with the Authentication Service. It defines methods for user management operations such as \texttt{register},\texttt{login}, and \texttt{validateToken}.
+    
+    \item \texttt{IDataProcessingClient}: This interface encapsulates the interaction with the Data Processing Service. It exposes the \texttt{processData} method, which accepts an \texttt{AnalyseRequest} and returns the identifier of the processed data, handling the necessary anonymization and formatting steps transparently.
+    
+    \item \texttt{IExplainableAIClient}: This interface manages the connection to the Explainable AI Service. It provides the \texttt{performAnalysis} method to trigger the diagnostic process (specifying the \texttt{dataId} and the desired AI \texttt{mode}) and the \texttt{getReports} method to retrieve diagnostic history for specific patients.
+\end{itemize}
+
+\subsubsection{Authentication}
+The Authentication Service is responsible for managing medical staff identities and securing access to the system. Its internal architecture, shown in Figure \ref{fig:auth-class}, relies on the Repository and Observer design patterns to ensure separation of concerns and testability.
+
+The core logic is encapsulated within the \texttt{AuthenticationService} class. This class orchestrates the registration and login workflows, utilizing internal helpers like \texttt{passwordHasher} for credential security and \texttt{jwtSigner} for issuing JSON Web Tokens.
+
+To decouple the business logic from data persistence, the service implements the Repository Pattern through the \texttt{IUserRepository} interface.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/auth-class.png} 
+    \caption{UML Class Diagram of Authentication Service.}
+    \label{fig:auth-class}
+\end{figure}
+
+\begin{itemize}
+    \item \texttt{IUserRepository}: Defines the contract for user data access. Methods such as \texttt{findByEmail} and \texttt{save} are used during registration and login.
+    \item \texttt{UserRepositoryImpl}: The concrete implementation that handles the actual database connections and SQL queries.
+\end{itemize}
+
+Furthermore, to satisfy the traceability requirement without coupling the authentication logic with the logging infrastructure, the service adopts the Observer Pattern via the \texttt{IAuditNotifier} interface.
+
+\begin{itemize}
+    \item \texttt{IAuditNotifier}: An abstraction that allows the service to emit events.
+    \item \texttt{AuditClient}: The concrete implementation that asynchronously forwards these events to the Audit Service via REST API call.
+\end{itemize}
+
+\subsubsection{Data Processing}
+The Data Processing Service handles the task of preparing raw clinical data for analysis while ensuring compliance with privacy standards. The internal architecture, illustrated in Figure \ref{fig:data-class}, is structured around the Chain of Responsibility Design Pattern to manage the data transformation pipeline efficiently.
+
+The core of this pattern is defined by the \texttt{IProcessingStep} interface and the abstract \texttt{BaseProcessingStep} class, which allows for the linking of processing stages. The workflow is decomposed into discrete, sequential steps.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/data-class.png} 
+    \caption{UML Class Diagram of Data Processing Service.}
+    \label{fig:data-class}
+\end{figure}
+
+\begin{itemize}
+    \item \texttt{TextHandler}: The first link in the chain, responsible for textual data.
+    \item     \texttt{ImageHandler}: This handler is responsible for image processing.
+    \item \texttt{NumericHandler}: This handler processes structured numeric data.
+    \item \texttt{SignalHandler}: The stage that handles signal samples input.
+\end{itemize}
+
+To handle data persistence and side effects, the service employs two additional abstractions:
+\begin{itemize}
+    \item \texttt{IProcessedDataRepository}: Implements the Repository Pattern to abstract the saving of anonymized data (\texttt{ProcessedData}) to the underlying database.
+    \item \texttt{IAuditNotifier}: Allows the service to asynchronously notify the Audit system of processing events.
+\end{itemize}
+
+\subsubsection{Explainable AI}
+The Explainable AI Service represents the diagnostic core of the system. Its design is centered around the Strategy Design Pattern, which is essential to satisfy the swappable AI requirement, allowing the system to select the most appropriate analysis model at runtime. The class structure is illustrated in Figure \ref{fig:ai-class}.
+
+The orchestrator of this component is the \texttt{ExplainableAIService} class. It relies on a set of abstractions to perform its tasks without being coupled to specific implementations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/ai-class.png} 
+    \caption{UML Class Diagram of Explainable AI Service.}
+    \label{fig:ai-class}
+\end{figure}
+
+\begin{itemize}
+    \item Strategy Pattern Implementation: The logic for diagnostic analysis is encapsulated within the \texttt{IAnalysisStrategy} interface. Two concrete strategies implement this interface:
+    \begin{itemize}
+        \item \texttt{TextStrategy}: Implements the textual analysis using ClinicalBERT.
+        \item \texttt{SignalStrategy}: Implements the analysis mode using Large Language Models with Chain-of-Thought reasoning.
+        \item \texttt{ImageStrategy}: Implements the imaging analysis mode using CNNs for x-rays and skin lesions.
+        \item \texttt{NumericStrategy}: Implements the structured data analysis mode using XGBoost on cardio risk context.
+    \end{itemize}
+
+    \item Repository Pattern: To manage the persistence of diagnostic reports, the service utilizes the \texttt{IReportRepository} interface. This allows the business logic to save and retrieve reports without handling the underlying database connection details.
+
+    \item External Dependencies: The service interacts with other microservices through specific interfaces:
+    \begin{itemize}
+        \item \texttt{IProcessedDataClient}: Retrieves the anonymized and pre-processed data required for the analysis.
+        \item \texttt{IAuditNotifier}: Asynchronously notifies the Audit Service of completed analyses, ensuring traceability.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Audit}
+The Audit Service acts as the centralized logging facility for the entire architecture, satisfying the critical requirement of traceability. Its class design, shown in Figure \ref{fig:audit-class}, is minimal and optimized for write-intensive operations.
+
+The architecture implements the Repository Design Pattern to abstract the persistence layer.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{images/audit-class.png} 
+    \caption{UML Class Diagram of Audit Service.}
+    \label{fig:audit-class}
+\end{figure}
+
+\begin{itemize}
+    \item \texttt{AuditService}: This class serves as the entry point. It exposes the \texttt{logEvent} method, which receives \texttt{LogEventRequest} objects containing details.
+    \item \texttt{ILogRepository}: This interface defines the contract for saving log entries, ensuring that the service logic is not coupled to the specific database technology.
+    \item \texttt{LogRepositoryImpl}: The concrete implementation that manages the connection to the underlying SQL database, executing the actual insertion of the log records.
+\end{itemize}
+
+This separation ensures that the logging logic remains consistent even if the storage mechanism changes, maintaining high maintainability.
+
+\subsection{Database}
+In the context of the proposed software architecture, the persistence layer is critical for ensuring data integrity, traceability, and secure access to medical records. A strict microservices architecture typically advocates for the \textit{Database-per-Service} pattern to ensure loose coupling. However, to optimize resource usage and simplify the deployment pipeline for this project, a hybrid approach was chosen. 
+
+While the system is conceptually designed as a set of distributed microservices, the physical data layer is consolidated into a single PostgreSQL instance. Within this shared physical instance, data are logically separated. Each microservice interacts exclusively with the tables relevant to its context.
+
+The database schema consists of the following entities, designed to support the system's requirements:
+\begin{itemize}
+    \item \textbf{doctors}: This table stores the profiles of registered medical professionals. It includes a unique identifier, personal details (name, surname, email), and, to ensure security, the password is stored exclusively as a SHA256 hash.
+    
+    \item \textbf{reports}: This table persists the outcomes of the AI analysis. It records the unique report ID, the ID of the doctor performing the analysis, and the hashed fiscal code of the patient to preserve anonymity. Additionally, it links to the preprocessed data ID and stores the diagnostic result, the prediction confidence, the specific analysis strategy employed, the textual XAI explanation, and the creation timestamp.
+    
+    \item \textbf{processed\_data}: This table serves as a storage for input data prepared for the algorithms. It contains a unique identifier, the processing strategy (indicating the data type), the actual preprocessed data payload, and the creation timestamp.
+    
+    \item \textbf{logs}: This table maintains the system's audit trail. It records a unique ID, the creation timestamp, the name of the microservice that generated the event, and the event description. Depending on the context of the operation, it optionally populates fields such as the doctor ID, the patient's hashed fiscal code, the processed data ID, or the report ID.
+\end{itemize}
+
+\subsection{Backend}
+The codebase was organized into modular packages corresponding to the main microservices, each of one has separate folders for models, schemas, repositories, services, utilities, and API routes.
+
+The following subsections aim to illustrate in detail the implementation choices adopted for the realization of the system.
+
+\subsubsection{Authentication}
+The Authentication Service serves as the centralized authority for identity management and access control within the system. Built using the FastAPI framework, it exposes RESTful endpoints to handle doctor registration, login procedures, and token validation. The internal architecture of this microservice is designed to ensure separation of concerns, asynchronous performance, and rigorous security standards.
+
+To decouple the business logic from the underlying persistence mechanism, the service implements the Repository Pattern. The \texttt{DoctorRepository} class acts as an abstraction layer over the database, utilizing SQLAlchemy with \texttt{AsyncSession} to perform non-blocking I/O operations. This allows the service to handle high concurrency efficiently. The repository exposes methods such as \texttt{find\_by\_email} and \texttt{save}, ensuring that the domain logic in \texttt{AuthenticationService} interacts with domain objects (\texttt{Doctor} entities) rather than raw SQL queries.
+
+A key architectural feature of this service is the implementation of the Observer Pattern for auditing purposes. The \texttt{AuthenticationService} acts as a Subject that notifies attached observers of critical state changes. The \texttt{AuditClient}, implementing the \texttt{IObserver} interface, listens for events such as registration successes or login failures and asynchronously transmits these logs to the logging microservice via HTTP requests. This design ensures that the authentication logic remains decoupled from the logging infrastructure.
+
+The registration process, handled by the \texttt{register\_doctor} method, adheres to strict security protocols. Upon receiving a \texttt{RegisterDoctorRequest}, the service first verifies that the email is not already associated with an existing account. 
+Crucially, user passwords are never stored in plaintext. The service utilizes a \texttt{PasswordHasher} utility—leveraging the bcrypt algorithm via the \texttt{passlib} library—to generate a secure hash of the password before persistence. Once the \texttt{Doctor} entity is successfully saved to the database via the repository, the service triggers a notification to the audit system to log the creation of the new user.
+
+The login workflow is managed via the \texttt{/login} endpoint. When a user submits credentials, the service retrieves the corresponding doctor record and verifies the provided password against the stored hash using the \texttt{PasswordHasher.verify} method. 
+Upon successful verification, the system employs a \texttt{JwtSigner} utility to generate a JSON Web Token (JWT). This token is signed using the HS256 algorithm and contains the user's ID as the subject (\texttt{sub}) and an expiration timestamp. This stateless authentication mechanism allows other microservices to verify the user's identity without querying the central database for every request.
+
+To support this distributed verification, the service exposes a \texttt{/validate} endpoint. This endpoint accepts a token, verifies its digital signature and expiration, and ensures the associated user still exists in the system. If valid, it returns the user's ID, effectively acting as an introspection endpoint for the rest of the architecture.
+
+\subsubsection{Audit}
+The Audit Service acts as the centralized observability hub for the entire distributed architecture. Implemented with FastAPI, it provides a unified interface for other microservices (such as Authentication and Core Diagnostic) to offload their operational logs. This design ensures that the business logic of individual services remains uncluttered by logging concerns, while simultaneously aggregating a comprehensive audit trail in a single persistence store.
+
+The service exposes its functionality through a RESTful API, specifically via the \texttt{/audit/log} endpoint. This \texttt{POST} route serves as the entry point for event ingestion. When an external service (e.g., the Authentication Service reporting a login failure) sends a request, the \texttt{AuditService} acts as the controller. It leverages FastAPI's Dependency Injection system to instantiate the service layer, ensuring that the request is processed within a valid asynchronous database session scope.
+
+Data integrity is enforced at the application boundary using Pydantic schemas. The \texttt{CreateLogRequest} model defines the strict contract for incoming logs. 
+While fields such as \texttt{service}, \texttt{event}, and \texttt{description} are mandatory to ensure basic traceability, the schema allows for flexibility through optional context fields. 
+Attributes like \texttt{doctor\_id}, \texttt{patient\_hashed\_cf}, \texttt{report\_id}, and \texttt{data\_id} are defined as nullable types (e.g., \texttt{int | None}). This structural design allows the service to handle heterogeneous events—ranging from a generic system error (which has no patient context) to a specific diagnostic report generation (which requires links to the doctor, patient, and data)—without requiring multiple database tables.
+
+The persistence logic is encapsulated within the \texttt{LogRepository} class, which implements the \texttt{ILogRepository} interface. This abstraction isolates the database operations from the business logic.
+\begin{itemize}
+    \item \textbf{Writing:} The \texttt{save} method utilizes SQLAlchemy's asynchronous session to commit the \texttt{Log} entity to the PostgreSQL database. Notably, the timestamping is handled automatically via the \texttt{server\_default=func.now()} directive in the model, ensuring temporal consistency across all records.
+    \item \textbf{Reading:} The repository also implements a sophisticated retrieval mechanism via the \texttt{find\_with\_filters} method. Instead of multiple specific query methods, it constructs a dynamic SQL query using SQLAlchemy's \texttt{select} and \texttt{and\_} operators. It programmatically appends \texttt{WHERE} clauses based on which filters (e.g., filtering by \texttt{doctor\_id} or \texttt{event} type) are present in the request, allowing for granular audit inspections.
+\end{itemize}
+
+\subsubsection{Data Processing}
+The Data Processing Service is responsible for ingesting raw patient data, applying modality-specific preprocessing algorithms, and storing the normalized output for subsequent AI analysis. Given the multimodal nature of the project (handling text, images, and biosignals), this service requires a highly flexible architecture capable of routing requests to the appropriate processing logic dynamically.
+
+To manage the complexity of supporting multiple data types, the service implements the Chain of Responsibility (CoR) design pattern. 
+
+The \texttt{DataProcessingHandler} abstract base class defines the interface for handling requests and passing them to the next handler in the chain. The service constructs a processing pipeline in the \texttt{\_build\_preprocessing\_chain} method, linking specific handlers:
+\begin{itemize}
+    \item \texttt{TextPreprocessingHandler}
+    \item \texttt{ImagePreprocessingHandler}
+    \item \texttt{NumericPreprocessingHandler}
+    \item \texttt{SignalPreprocessingHandler}
+\end{itemize}
+
+When a \texttt{process} request is received, the input flows through this chain. Each handler inspects the \texttt{strategy} field of the request. If the handler matches the strategy (e.g., "img\_rx"), it processes the data; otherwise, it delegates execution to the \texttt{next\_handler}. This ensures that adding a new data type in the future (e.g., genetic data) only requires creating a new handler class and adding it to the chain, adhering to the Open/Closed Principle.
+
+Each handler implements specific algorithms to normalize data for AI consumption:
+
+\paragraph{Image Processing}
+The \texttt{ImagePreprocessingHandler} performs rigorous transformation to prepare inputs for Convolutional Neural Networks (CNNs). It decodes the Base64 input, resizes images to a standard $224 \times 224$ resolution, and applies normalization (using standard mean and standard deviation values). Finally, it converts the image into a tensor format, serializes it via \texttt{pickle}, and encodes it back to Base64 for storage.
+
+\paragraph{Signal Processing}
+The \texttt{SignalPreprocessingHandler} handles time-series data (e.g., ECGs). It parses the raw JSON input into NumPy arrays and applies Min-Max Normalization:
+\[
+X_{norm} = \frac{X - X_{min}}{X_{max} - X_{min} + \epsilon}
+\]
+This ensures that signal amplitudes are scaled between 0 and 1, preventing numerical instability during model inference.
+
+\paragraph{Text and Numeric Processing}
+The text handler uses Regular Expressions (\texttt{re}) to sanitize inputs by removing excess whitespace, while the numeric handler converts JSON features into structured NumPy arrays, ensuring type consistency (float32).
+
+Once processed, the data is persisted via the \texttt{ProcessedDataRepository}. The service utilizes the same Observer Pattern seen in other microservices to report operations. Upon successful storage, the \texttt{DataProcessingService} notifies the \texttt{AuditClient}, which logs a "data\_processed" event linked to the new \texttt{data\_id}. This creates a traceable link between the raw data ingestion and the system audit trail.
+
+\subsubsection{Explainable AI}
+The Explainable AI Service represents the cognitive core of the architecture. Its primary responsibility is to retrieve preprocessed data, execute specific diagnostic algorithms based on the data modality, and, crucially, generate human-understandable explanations for its predictions.
+
+To manage the diverse algorithmic requirements of multimodal data without creating a tangled conditional logic, the service implements the Strategy Pattern. The \texttt{XAiService} acts as the context, while the specific logic for each data type is encapsulated in concrete classes implementing the \texttt{AnalysisStrategy} interface.
+
+The service maintains a registry mapping:
+\begin{itemize}
+    \item \textbf{img\_rx:} \texttt{ImageAnalysisStrategy} (for X-Rays)
+    \item \textbf{img\_skin:} \texttt{ImageAnalysisStrategy} (for Dermoscopy)
+    \item \textbf{numeric:} \texttt{NumericAnalysisStrategy} (for Heart Disease tabular data)
+    \item \textbf{text:} \texttt{TextAnalysisStrategy} (for Clinical Notes)
+    \item \textbf{signal:} \texttt{SignalAnalysisStrategy} (for ECGs)
+\end{itemize}
+
+When an analysis request is received, the service inspects the \texttt{strategy} field, dynamically instantiates the correct class, and delegates the execution. This allows the system to be extended with new AI models (e.g., MRI analysis) simply by adding a new strategy class, adhering to the Open/Closed Principle.
+
+Each strategy implements a distinct combination of inference models and explainability techniques.
+
+\paragraph{Image Analysis}
+The \texttt{ImageAnalysisStrategy} leverages PyTorch and Convolutional Neural Networks (CNNs). It utilizes a \textit{DenseNet} (CheXNet) for chest X-rays and an \textit{EfficientNet} for skin lesions.
+To provide explainability, the service implements Grad-CAM (Gradient-weighted Class Activation Mapping). By computing the gradients of the target class score with respect to the feature maps of the final convolutional layer, the system generates a heatmap. This heatmap is overlaid on the original image to visually highlight the specific regions (e.g., a lung nodule or skin border) that influenced the model's decision, providing immediate visual verification for the doctor.
+
+\paragraph{Numeric Analysis}
+The \texttt{NumericAnalysisStrategy} utilizes an XGBoost classifier to assess heart disease risk based on patient vitals. Unlike opaque decision trees, this strategy integrates SHAP (Shapley Additive Explanations). SHAP values are based on game theory and quantify the contribution of each feature (e.g., cholesterol level, age) to the prediction. The service returns a sorted list of features that pushed the risk score up or down, offering a precise local explanation for each specific patient.
+
+\paragraph{Textual and Signal Analysis}
+For unstructured data, the system employs a hybrid approach:
+\begin{itemize}
+    \item \textbf{Text:} The \texttt{TextAnalysisStrategy} uses a ClinicalBERT transformer (via HuggingFace) for high-precision classification of medical notes into macro-categories (e.g., Cardiology, Neurology). It then chains this result into a Google Gemini (Generative AI) prompt to synthesize a natural language explanation of \textit{why} the symptoms match that category.
+    \item \textbf{Signals:} The \texttt{SignalAnalysisStrategy} processes ECG data by calculating statistical descriptors (min, max, mean) and passing the normalized signal array to the Gemini 2.5 Flash model. The LLM acts as an anomaly detector, analyzing the waveform morphology to identify arrhythmias and returning a structured JSON diagnosis.
+\end{itemize}
+
+The analysis workflow is asynchronous and distributed. Upon receiving a request, the \texttt{XAiService} performs an HTTP \texttt{GET} request to the Data Processing Service to retrieve the prepared data payload. Once the strategy returns the diagnosis, confidence score, and explanation, the result is encapsulated in a \texttt{Report} entity.
+This report is persisted via the \texttt{ReportRepository}, linking the AI output to the Doctor and the Patient's hashed ID. Finally, the service notifies the \texttt{AuditService} via the Observer pattern, ensuring that every diagnostic event is immutably logged.
+
+\subsubsection{Gateway}
+The Gateway Service functions as the single entry point (API Gateway) for the entire distributed system. Implemented using FastAPI, it abstracts the underlying microservices architecture from the client applications (Frontend), acting as a reverse proxy and a service orchestrator. This design implements the Facade Pattern, simplifying client interactions while enforcing security policies at the perimeter.
+
+Unlike a simple pass-through proxy, the Gateway actively coordinates workflows that span multiple internal services. The most critical example of this orchestration is the \texttt{/analyse} endpoint, which implements a synchronous saga pattern to generate a diagnostic report. 
+
+The workflow executed by the \texttt{Gateway.analyse} method is as follows:
+\begin{enumerate}
+    \item \textbf{Authentication:} Upon receiving a request with a \texttt{Bearer} JWT, the Gateway first calls the Authentication Service (\texttt{/validate}). It retrieves the verified \texttt{doctor\_id}, ensuring the requester is authorized before any processing resources are consumed.
+    \item \textbf{Data Retrieval:} Next, it extracts the \texttt{raw\_data} and \texttt{strategy} from the request and forwards them to the Data Processing Service (\texttt{/process}). It waits for the response containing the unique \texttt{processed\_data\_id}.
+    \item \textbf{Diagnostic Execution:} Finally, it combines the \texttt{doctor\_id} (from step 1) and the \texttt{processed\_data\_id} (from step 2) into a new payload. This is sent to the Explainable AI Service (\texttt{/analyse}) to trigger the actual inference and explanation generation.
+\end{enumerate}
+
+This approach ensures that the frontend only needs to make a single HTTP request, while the Gateway handles the complexity of chaining the internal services.
+
+The Gateway is responsible for enforcing network security policies:
+\begin{itemize}
+    \item \textbf{CORS Management:} It utilizes \texttt{CORSMiddleware} to handle Cross-Origin Resource Sharing, allowing the frontend application to communicate with the backend API securely, regardless of the hosting domain.
+    \item \textbf{Token Extraction:} It implements a dependency (\texttt{get\_jwt}) that strictly parses the \texttt{Authorization} header. If the header is missing or malformed, the Gateway rejects the request immediately with a 401 Unauthorized error, preventing invalid traffic from reaching the internal microservices.
+\end{itemize}
+
+To maintain high throughput, the service utilizes HTTPX as its internal HTTP client. The \texttt{HttpClient} wrapper ensures that all upstream requests to internal microservices are non-blocking (asynchronous). This allows the Gateway to handle concurrent incoming requests efficiently without being blocked while waiting for the AI or Database operations to complete in other containers.
+
+\subsection{Frontend}
+The frontend of the Early Care Gateway platform is implemented as a single-page application (SPA) using React, with the primary goal of providing an intuitive, responsive, and secure user interface for clinical users. The application is designed to guide authorized doctors through the authentication process, the execution of AI-powered clinical analyses, and the consultation of previously generated reports.
+
+At the architectural level, the application is structured around React Router, which enables client-side routing and a clear separation between public and protected areas of the system. The entry point of the application initializes the React rendering process and mounts the main application component, ensuring global styles and configuration are applied consistently across all views.
+
+\paragraph{Routing and Access Control}
+The routing logic defines a public authentication route and a protected dashboard area. Access to the dashboard and its internal pages is regulated through a dedicated route protection mechanism based on JSON Web Tokens (JWT). Upon successful authentication, the JWT token is stored in the browser local storage and automatically attached to subsequent API requests. If no valid token is found, the user is transparently redirected to the authentication page, preventing unauthorized access to clinical functionalities.
+
+\paragraph{Authentication Page}
+The authentication page provides both login and registration functionalities within a single, adaptive interface. Input validation is performed client-side to ensure correctness of credentials and to provide immediate feedback to the user. The interface is designed with a clear visual separation between branding elements and form controls, improving usability and reinforcing the identity of the platform.  
+Figure~\ref{fig:register-ui} and Figure~\ref{fig:login-ui} illustrate the registration and login pages.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/register-ui.png} 
+    \caption{User Interface of Registration Page.}
+    \label{fig:register-ui}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/login-ui.png} 
+    \caption{User Interface of Login Page.}
+    \label{fig:login-ui}
+\end{figure}
+
+\paragraph{Dashboard Layout and Navigation}
+Once authenticated, users are redirected to the main dashboard, which is built around a reusable layout component. This layout includes a persistent sidebar containing navigation controls, user information, and logout functionality, while the main content area dynamically renders the selected view. The sidebar clearly separates the core functionalities of the platform, namely the execution of new analyses and the consultation of report history, enabling fast and intuitive navigation.
+
+User information, such as the doctor’s name and surname, is extracted from the decoded JWT token and displayed in the interface, reinforcing transparency and accountability within the clinical environment.
+
+\paragraph{Updated Diagnostic Hub}
+The Diagnostic Hub, shown in Figure~\ref{fig:pred} allows users to perform analyses based on textual clinical notes, medical images (X-ray and skin lesion), structured cardiovascular risk parameters, and raw ECG signal samples. The component enforces mandatory patient identification through a fiscal code, which is validated on the client side before being transmitted to the backend for hashing and audit purposes.
+
+Depending on the selected analysis strategy, the frontend dynamically adapts the user interface, validates inputs, and performs preliminary preprocessing, including Base64 encoding of images, numerical parsing of ECG signals, and client-side feature engineering for cardiovascular risk assessment through one-hot encoding of categorical variables and normalization of continuous features. All processed data are sent to the AI Gateway using a unified request format, enabling backend services to remain strategy-agnostic.
+
+The Diagnostic Hub also handles the visualization of AI outputs, displaying diagnoses, confidence scores, and explainability artifacts such as Grad-CAM heatmaps for imaging tasks, feature impact tables for cardiovascular predictions, and textual explanations for text- and signal-based analyses, thereby improving transparency and interpretability of the overall system.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/pred.png} 
+    \caption{User Interface of Diagnostic Hub Page.}
+    \label{fig:pred}
+\end{figure}
+
+\paragraph{Reports History Page}
+In addition to real-time analysis, the frontend provides a dedicated view for consulting previously generated reports. This section allows doctors to retrieve historical analyses, optionally filtering them by patient fiscal code, enabling evaluation and clinical follow-up. The reports history interface is shown in Figure~\ref{fig:history}. By clicking on a report, a detailed modal is displayed, providing additional information about the diagnosis, as illustrated in Figure~\ref{fig:history-det}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/history.png} 
+    \caption{User Interface of Reports History Page.}
+    \label{fig:history}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/history-det.png} 
+    \caption{User Interface of Reports History Details Modal.}
+    \label{fig:history-det}
+\end{figure}
+
+\paragraph{Styling and User Experience}
+The entire frontend leverages a utility-first styling approach through Tailwind CSS, ensuring visual consistency, responsiveness across devices, and rapid interface iteration. Icons and visual cues are used extensively to guide user interaction, reduce cognitive load, and clearly distinguish between different analysis modalities and system states.
+
+Overall, the frontend architecture combines modular React components, secure routing mechanisms, and a user-centered design philosophy to provide a robust and clinically oriented interface for interacting with the Early Care Gateway platform.
+
+\section{Deployment}
+Deployment strategies focused on containerization and scalable hosting to ensure reproducibility and system availability. Docker was employed to encapsulate each microservice in independent containers, isolating dependencies and simplifying deployment.
+
+The entire system is designed to be infrastructure-agnostic through the use of Docker containerization. This approach ensures consistency between development, testing, and production environments.
+
+The \texttt{Dockerfile} for each microservice has been optimized to minimize the final image size and accelerate build times. By separating the dependency installation phase (copying \texttt{requirements.txt} first) from the source code copy, the build process leverages Docker's layer caching mechanism. If the application code changes but the dependencies do not, Docker reuses the cached dependency layer, significantly reducing deployment time.
+
+All sensitive parameters, such as database credentials, API keys, and internal service URLs, are injected via environment variables defined in a \texttt{.env} file.
+
+Service orchestration is defined in the \texttt{docker-compose.yaml} file, which describes a complete environment composed of eight interconnected services.
+
+The backend services are built from their respective contexts. 
+Crucially for the development phase, these services mount the local source code as a volume (\texttt{./backend/...:/app}) and run with the \texttt{--reload} flag. This enables Hot Reloading, allowing developers to see code changes immediately without rebuilding the containers.
+
+The services communicate via an internal Docker bridge network using service discovery. For instance, the Gateway communicates with the Authentication Service using the hostname \texttt{http://auth\_service:8000}, resolving internal IP addresses automatically.
+
+Furthermore, execution scripts are provided to simplify the project startup process, enabling a one-click deployment while automatically performing bootstrap integration tests.

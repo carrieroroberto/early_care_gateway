@@ -1,0 +1,9 @@
+\chapter*{Abstract}
+
+The EarlyCare Gateway project addresses critical challenges in the contemporary healthcare landscape, specifically targeting the issues of preliminary analysis. This work presents a Clinical Decision Support System (CDSS) designed to assist doctors through a multimodal AI analysis approach.
+
+The system integrates a set of Artificial Intelligence models to process clinical data. It employs a fine-tuned ClinicalBERT and Gemini 2.5 Flash-Lite for the analysis of unstructured textual symptoms and ECG signals, CheXNet and EfficientNet for the classification of chest X-rays and skin lesions, and XGBoost for cardiovascular risk prediction based on structured tabular data. The solution is built upon a containerized microservices architecture, ensuring high cohesion and low coupling, as well as traceability and data protection.
+
+Experimental validation demonstrates the system's reliability across all strategies. The textual analysis module achieved an accuracy of 88\%, while the computer vision components demonstrated a Mean AUC of 0.837 for chest X-rays and an accuracy of 88\% for skin lesion diagnosis. Furthermore, the cardiovascular risk prediction model reached a recall of 85.3\%.
+
+A central focus of the research is the implementation of Explainable AI (XAI) techniques, including SHAP, Grad-CAM, and Chain-of-Thought reasoning, that mitigate the black-box problem of AI models in critical fields, such as clinical applications.

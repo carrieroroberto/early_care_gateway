@@ -1,0 +1,25 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+The development of the project has demonstrated the effectiveness of a Clinical Decision Support System designed to address the pressing challenges of modern healthcare, such as increasing cognitive load on medical professionals.
+
+The results obtained throughout the experimental phase confirm the validity of the architectural and methodological choices adopted. From a software engineering perspective, the implementation of a containerized microservices architecture successfully achieved the goals of modularity and maintainability. By decoupling critical components such as authentication, data processing, and analysis logic, the system ensures high cohesion and low coupling, while satisfying strict non-functional requirements regarding data privacy, anonymization, and audit traceability.
+
+On the artificial intelligence front, the multimodal strategy proved to be a decisive factor. The system’s ability to adapt to different data types leveraging ClinicalBERT for textual notes, CheXNet and EfficientNet for medical imaging, and XGBoost for structured data, llowed it to achieve high performance metrics, as evidenced by the accuracy rates and AUC scores presented in the results chapter. Furthermore, a defining characteristic of this project was the integration of Explainable AI (XAI) techniques. By implementing SHAP, Grad-CAM, and Chain-of-Thought reasoning, the predictions are turned into transparent insights that assist human doctors.
+
+In summary, EarlyCare Gateway stands as a reliable prototype that balances AI innovation and software engineering standards for data-driven optimization of clinical processes.
+
+\section{Future Developments}
+\label{sec:future_developments}
+While the current iteration of the system has met its design objectives, the transition from a prototype to a fully operational deployment within hospital ecosystems requires specific evolutions. Future development will focus on enhancing system interoperability.
+
+\subsection{Clinical Interoperability}
+The system should communicate with existing Hospital Information Systems (HIS) and Electronic Health Records (EHR). It requires the integration of standard exchange protocols such as HL7 (Health Level Seven) and FHIR (Fast Healthcare Interoperability Resources). This standardization will enable the direct and automated ingestion of patient data, eliminating the need for manual entry and ensuring that diagnostic reports are automatically pushed to the patient's clinical history.
+
+\subsection{AI Evolution}
+In the domain of physiological signal analysis, while the current implementation leveraging Large Language Models for ECG interpretation has demonstrated semantic reasoning capabilities, future iterations will adopt 1D-Convolutional Neural Networks (1D-CNNs). These Deep Learning architectures are engineered for time-series data and are expected to offer better  performance in detecting morphological features and rhythmic anomalies with greater computational efficiency compared to generative models.
+
+\subsection{Medical Feedback}
+To ensure the system continuously adapts to real-world medical complexities it is needed the development a Q\&A (Question and Answer) mechanism that allows clinicians to validate and correct AI's suggestions. This expert feedback will generate a domain-specific dataset that will be used for the continuous re-training and fine-tuning of the models, allowing the algorithms to learn from their errors and adapt to local trends.
+
+\subsection{Infrastructure Scalability}
+The current deployment, based on Docker Compose, is suitable for development but will be migrated to Kubernetes. This orchestration platform will enable auto-scaling capabilities, allowing the system to dynamically allocate resources during peak hours. Concurrently, the inter-service communication architecture will transition towards a fully event-driven model using a Message Broker (such as RabbitMQ or Apache Kafka). This shift will further decouple the microservices, ensuring that resource-intensive AI inference tasks are handled asynchronously without impacting the responsiveness of the user interface.

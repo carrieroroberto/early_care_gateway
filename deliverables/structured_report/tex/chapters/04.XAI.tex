@@ -1,0 +1,158 @@
+\chapter{AI Solutions and Explainability}
+\label{chap:ai_solutions}
+
+This chapter details the Artificial Intelligence architecture implemented in the system. The solution adopts a multimodal diagnostic approach, leveraging specialized models for textual, imaging, signal-based, and structured data analysis.
+
+\section{Textual Analysis Strategy}
+\label{sec:textual_analysis}
+The analysis of unstructured textual data, including patient symptoms and clinical transcriptions, is managed by the \texttt{TextAnalysisStrategy}. This module implements a two-stage pipeline: a deterministic classification stage based on a fine-tuned Transformer model, followed by a generative reasoning stage powered by a Large Language Model (LLM).
+
+\subsection{ClinicalBERT Architecture and Fine-Tuning}
+\label{subsec:clinicalbert}
+The core classifier relies on ClinicalBERT (\texttt{emilyalsentzer/Bio\_ClinicalBERT}) \cite{clinicalbert}. Unlike standard BERT models trained on general corpora like Wikipedia, this model was pre-trained on the MIMIC-III database, comprising over 2 million electronic health records from intensive care units. This domain-specific pre-training enables the model to capture complex medical semantics and terminology effectively.
+
+\paragraph{Dataset and Preprocessing}
+Fine-tuned has been performed on MTSamples dataset \cite{mtsamples}, a comprehensive collection of transcribed medical reports. The dataset was filtered to retain eight primary medical specialties: \textit{Cardiovascular/Pulmonary, Orthopedic, Gastroenterology, Neurology, Obstetrics/Gynecology, Urology, ENT, and Hematology-Oncology}.
+The input text (derived from the \textit{transcription} and \textit{description} fields) undergoes a cleaning process to remove non-printable characters, followed by tokenization using the specific ClinicalBERT tokenizer with a maximum sequence length of $L=256$ tokens.
+
+\paragraph{Training Configuration}
+The fine-tuning process was executed using the Hugging Face \texttt{Trainer} API with the following hyperparameters, optimized for stability and convergence:
+\begin{itemize}
+    \item \textbf{Epochs}: 4
+    \item \textbf{Batch Size}: 8
+    \item \textbf{Learning Rate}: $3e^{-5}$
+    \item \textbf{Optimizer}: AdamW with weight decay (0.01)
+\end{itemize}
+This configuration yielded an accuracy of approximately 88\% on the validation set, demonstrating high reliability in categorizing clinical narratives.
+
+\subsection{Generative Reasoning and Chain of Thought}
+\label{subsec:gemini_text}
+
+While ClinicalBERT provides the technical classification (e.g., ``Cardiovascular''), the system requires a more granular diagnosis. To achieve this, the output of the classifier is fed into a second stage based on Gemini 2.0 Flash.
+
+The system constructs a prompt using the \textit{Chain of Thought} (CoT) technique, injecting:
+\begin{enumerate}
+    \item The patient's raw symptoms.
+    \item The predicted specialty from ClinicalBERT.
+    \item The confidence score of the prediction.
+\end{enumerate}
+The LLM is instructed to act as an expert clinician, reasoning upon the classification to generate a specific pathology (e.g., ``Unstable Angina'') and a concise explanation (XAI). The response is parsed from JSON format, ensuring structured integration with the backend.
+
+\section{Imaging Analysis Strategy}
+\label{sec:imaging_analysis}
+
+The visual diagnostic module is managed by the \texttt{ImageAnalysisStrategy} class. This component is designed to handle distinct imaging modalities by dynamically selecting the appropriate neural network architecture based on the input type. The system currently supports two primary workflows: chest X-rays for pulmonary analysis and dermatoscopic images for skin lesion classification.
+
+\subsection{Data Preprocessing Pipeline}
+\label{subsec:img_preprocessing}
+In a web-based microservices architecture, images are transmitted as Base64-encoded strings rather than raw binary files. The preprocessing pipeline, implemented in the \texttt{\_base64\_to\_tensor} method, performs the rigorous mathematical transformations required to convert this input into a format suitable for PyTorch models:
+
+\begin{enumerate}
+    \item \textbf{Decoding and Resizing}: The Base64 string is decoded into an RGB image and resized to a standard resolution of $224 \times 224$ pixels. This ensures compatibility with the fixed input layers of the convolutional networks.
+    \item \textbf{Normalization}: The pixel values are standardized using the mean and standard deviation statistics from the \textit{ImageNet} dataset ($\mu=[0.485, 0.456, 0.406]$, $\sigma=[0.229, 0.224, 0.225]$). This step allows the models to leverage transfer learning effectively by maintaining consistent distribution properties.
+    \item \textbf{Transposition}: The data structure is converted from the standard Height-Width-Channel (HWC) format to the Channel-Height-Width (CHW) format required by the PyTorch inference engine.
+\end{enumerate}
+
+\subsection{Chest X-Ray Analysis (CheXNet)}
+\label{subsec:chexnet}
+For thoracic imaging, the system employs the CheXNet architecture, based on a Dense Convolutional Network (DenseNet-121) \cite{chexnet}. The model was trained on the public NIH ChestX-ray14 dataset \cite{chestxray14}, one of the largest collections of chest X-rays available, comprising over 112,000 frontal images from more than 30,000 unique patients.
+
+The analysis is framed as a \textit{Multi-Label Classification} task, as a single patient may present multiple conditions simultaneously (e.g., Pneumonia and Infiltration). Consequently, the final layer utilizes a Sigmoid activation function rather than Softmax, and the model is optimized using the \textit{Binary Cross Entropy with Logits Loss} (BCEWithLogitsLoss). The output is a vector of probabilities for 14 different pathologies.
+
+\subsection{Skin Lesion Analysis (EfficientNet)}
+\label{subsec:efficientnet}
+For the analysis of skin lesions, the system integrates EfficientNet-B0 \cite{efficientnet}. This architecture was selected for its superior parameter efficiency and its ability to extract complex textural features. The model was trained on the HAM10000 (Human Against Machine with 10000 training images) dataset \cite{ham10000}, which serves as a standard benchmark for automated dermatoscopic diagnosis.
+
+Unlike the X-ray module, this task is a \textit{Multi-Class Classification} problem aimed at identifying a single, mutually exclusive diagnosis among 7 categories (Melanoma, Nevus, Basal Cell Carcinoma). To address the class imbalance intrinsic to the HAM10000 dataset, the training phase employed a \textit{Weighted Cross-Entropy Loss}. This loss function penalizes errors on rare but critical classes (such as Melanoma) more heavily, thereby improving clinical sensitivity.
+
+\subsection{Explainability with Grad-CAM}
+\label{subsec:gradcam}
+To provide visual interpretability and mitigate the ``black box'' problem, both imaging strategies implement Grad-CAM (Gradient-weighted Class Activation Mapping) \cite{gradcam}. This technique computes the gradients of the target class score with respect to the feature maps of the final convolutional layer (\texttt{features[-1]}). These gradients are used to generate a coarse localization map (heatmap), which highlights the regions of the image that most influenced the model's prediction. The heatmap is overlaid on the original image and returned to the user, allowing clinicians to verify if the AI is focusing on relevant anatomical features.
+
+\section{Structured Data Analysis Strategy}
+\label{sec:structured_analysis}
+The analysis of tabular clinical data, such as vital signs and laboratory results, is handled by the \texttt{NumericAnalysisStrategy} class. This component specializes in cardiovascular risk assessment, transforming a heterogeneous set of numerical and categorical inputs into probabilistic predictions supported by mathematically grounded explanations.
+
+\subsection{Dataset and Preprocessing}
+\label{subsec:struct_preprocessing}
+The model was developed using the Heart Disease UCI Dataset \cite{uciheart}, a comprehensive collection aggregating data from four international databases (Cleveland, Hungary, Switzerland, Long Beach VA) totaling 920 patients. This dataset was selected for its greater robustness compared to the Cleveland-only subset, offering a more diverse representation of cardiac pathologies.
+
+The preprocessing pipeline performs the following critical transformations:
+\begin{itemize}
+    \item \textbf{Data Imputation}: Missing values are handled statistically, using the median for numerical variables and the mode for categorical ones, ensuring model continuity.
+    \item \textbf{Feature Engineering}: The 13 clinical input parameters (e.g., \texttt{cp} for chest pain, \texttt{restecg} for ECG results) are expanded into a vector of 18 features via \textit{One-Hot Encoding}. This allows the model to assign distinct risk weights to each specific sub-category.
+\end{itemize}
+
+\subsection{XGBoost Classifier}
+\label{subsec:xgboost}
+The inference engine is built upon XGBoost (eXtreme Gradient Boosting) \cite{xgboost}, an ensemble learning algorithm based on decision trees (Gradient Boosted Decision Trees). XGBoost was chosen for its proven efficiency on structured data, its native handling of sparse values, and its resistance to overfitting.
+The model operates as a binary classifier, returning the probability of the presence of heart disease. The optimal hyperparameters (e.g., \texttt{n\_estimators}, \texttt{max\_depth}) were identified through a \textit{Grid Search} procedure with 5-fold cross-validation.
+
+\subsection{Local Interpretability with SHAP}
+\label{subsec:shap}
+To satisfy explainability requirements, the strategy integrates the SHAP (SHapley Additive exPlanations) framework \cite{shap2017}. Using a \texttt{TreeExplainer}, the system computes Shapley values for each instance, quantifying the contribution of each feature to the deviation of the prediction from the average.
+The algorithm selects the top 5 most impactful features and classifies them as \textit{Risk Factors} (positive contribution to disease probability) or \textit{Protective Factors} (negative contribution), providing the physician with a clear picture of the AI's decision rationale.
+
+\section{Signal Analysis Strategy}
+\label{sec:signals_analysis}
+The analysis of biomedical signals, particularly electrocardiographic (ECG) tracings, is managed by the \texttt{SignalAnalysisStrategy} class. The system adopts an innovative approach that does not rely on traditional 1D convolutional networks, but instead leverages the multimodal reasoning capabilities of Large Language Models (LLMs) to interpret raw numerical data as a semantic sequence.
+
+\subsection{Preprocessing and Context Optimization}
+\label{subsec:signal_preprocessing}
+The ECG signal is received by the system as a Base64-encoded string. To enable processing by the LLM without saturating the context window, a data reduction pipeline has been implemented within the \texttt{\_decode\_signal} method:
+
+\begin{enumerate}
+    \item \textbf{Deserialization}: The input string is decoded and deserialized (via the \texttt{pickle} library) into a NumPy numerical array.
+    \item \textbf{Statistical Extraction}: Global descriptive metrics are calculated on the entire signal, including minimum, maximum, and mean values (\texttt{np.min}, \texttt{np.max}, \texttt{np.mean}). These metadata provide the model with context regarding the amplitude and global voltage of the tracing.
+    \item \textbf{Truncation}: For punctual morphological analysis, the system extracts a significant sample limited to the first 300 data points. This operation reduces computational complexity while maintaining visibility of potential immediate rhythmic anomalies.
+\end{enumerate}
+
+\subsection{Inference via Gemini LLM}
+\label{subsec:gemini_signal}
+
+The analysis is performed by invoking the Gemini 2.0 Flash model. The system prompt is dynamically engineered by injecting the two previously prepared data blocks: global statistics and the raw data sample.
+The prompt instructs the model to analyze the data to identify rhythm anomalies and return a valid JSON object containing the diagnosis, confidence level, and a textual explanation \cite{gemini_report}.
+
+\section{Explainable AI (XAI) Implementation}
+\label{sec:explainability}
+The architecture of the EarlyCare Gateway natively integrates explanation mechanisms for each model type, addressing the ``Black Box'' problem in the clinical domain \cite{xai_health}.
+
+\subsection{SHAP for Structured Data}
+\label{subsec:xai_shap}
+For the XGBoost predictive model, interpretability is guaranteed by the SHAP (SHapley Additive exPlanations) library. Within the \texttt{NumericAnalysisStrategy} class, a \texttt{TreeExplainer} is used to calculate Shapley values, which quantify the contribution of each feature to the final prediction.
+The system filters results to show the user only the 5 most relevant clinical factors (with absolute impact $>0.1$), indicating whether they act as risk or protective factors \cite{shap_paper}.
+
+\subsection{Grad-CAM for Imaging}
+\label{subsec:xai_gradcam}
+The imaging strategies (\texttt{ImageAnalysisStrategy}) implement the Grad-CAM technique. The system calculates the gradients of the predicted class with respect to the last convolutional layer of the neural network (e.g., the \texttt{features[-1]} block for EfficientNet).
+These gradients are used to generate a heatmap that highlights the anatomical regions determining the diagnosis. The resulting image is Base64-encoded and sent to the frontend for overlay visualization on the original finding \cite{gradcam}.
+
+\subsection{Chain of Thought (CoT)}
+\label{subsec:xai_cot}
+For text and signal-based analyses, explainability is intrinsic to the LLM's generative process. Through the \textit{Chain of Thought Prompting} technique, the model is forced to verbalize its logical reasoning.
+In the code, this is implemented by explicitly requesting an \texttt{``explanation''} or \texttt{``xai\_explanation''} section in the prompt, which is then parsed and displayed to the doctor as a natural language justification for the suggested diagnosis \cite{cot_paper}.
+
+\begin{table}[H]
+\centering
+\small % Riduce la dimensione del testo
+\caption{Updated Summary of AI Models and Explainability Techniques}
+\renewcommand{\arraystretch}{1.2} % Riduce lo spazio verticale tra le righe (era 1.4)
+\begin{tabular}{|>{\raggedright\arraybackslash}m{3.5cm}|
+               >{\raggedright\arraybackslash}m{5.5cm}|
+               >{\raggedright\arraybackslash}m{4cm}|}
+\hline
+\centering \textbf{Data Type} & \centering \textbf{AI Model} & \centering \textbf{Explainability} \tabularnewline
+\hline
+Textual Data & Bio\_ClinicalBERT (Fine-tuned) + Gemini 2.0 Flash & Chain of Thought (CoT)\tabularnewline
+\hline
+Chest X-Ray & CheXNet (DenseNet121) & Grad-CAM \tabularnewline
+\hline
+Skin Lesions & EfficientNet-B0 & Grad-CAM \tabularnewline
+\hline
+Physiological Signals (ECG) & Gemini 2.0 Flash (LLM) & Chain of Thought (CoT)\tabularnewline
+\hline
+\textbf{Structured Data} & \textbf{XGBoost (Gradient Boosting)} & \textbf{SHAP (TreeExplainer)} \tabularnewline
+\hline
+\end{tabular}
+\label{tab:xai_updated}
+\end{table}

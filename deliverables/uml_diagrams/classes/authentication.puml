@@ -9,7 +9,6 @@ interface IUserRepository {
 class UserRepositoryImpl implements IUserRepository {
   - dbConnection
   + findByEmail(email: String) : User
-  + findByResetToken(tokenHash: String) : User
   + save(user: User)
   + update(user: User)
 }
@@ -31,8 +30,6 @@ class AuthenticationService {
   + register(data: RegisterRequest)
   + login(data: LoginRequest) : TokenResponse
   + validateToken(token: String) : String
-  + requestPasswordReset(data: ForgotPasswordRequest)
-  + resetPassword(data: ResetPasswordRequest)
 }
 
 AuthenticationService o-- "1" IUserRepository

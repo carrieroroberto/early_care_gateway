@@ -16,29 +16,32 @@ class AuditClient implements IAuditNotifier {
   + notify(eventType: String, details: Map)
 }
 
-interface IProcessingStep {
-  + setNext(step: IProcessingStep)
+interface IHandler {
+  + setNext(step: IHandler)
   + handle(dataContext: DataContext)
 }
-abstract class BaseProcessingStep implements IProcessingStep {
-  - next: IProcessingStep
+abstract class BaseHandler implements IHandler {
+  - next: IHandler
   + setNext(step)
   + handle(dataContext: DataContext)
 }
-class ValidationStep extends BaseProcessingStep {
+class TextHandler extends BaseHandler {
   + handle(dataContext: DataContext)
 }
-class AnonymizationStep extends BaseProcessingStep {
+class ImageHandler extends BaseHandler {
   + handle(dataContext: DataContext)
 }
-class EnrichmentStep extends BaseProcessingStep {
+class NumericHandler extends BaseHandler {
+  + handle(dataContext: DataContext)
+}
+class SignalHandler extends BaseHandler {
   + handle(dataContext: DataContext)
 }
 
 class DataProcessingService {
   - repository: IProcessedDataRepository
   - auditNotifier: IAuditNotifier
-  - chainHead: IProcessingStep
+  - chainHead: IHandler
  
   + processData(data: AnalyseRequest) : String
   + getProcessedData(dataId: String) : ProcessedData
@@ -46,9 +49,10 @@ class DataProcessingService {
 
 DataProcessingService o-- "1" IProcessedDataRepository
 DataProcessingService o-- "1" IAuditNotifier
-DataProcessingService o-- "1" IProcessingStep : (chainHead)
+DataProcessingService o-- "1" IHandler : (chainHead)
 
-ValidationStep o--> "1" AnonymizationStep : next
-AnonymizationStep o--> "1" EnrichmentStep : next
+TextHandler o--> "1" ImageHandler : next
+ImageHandler o--> "1" NumericHandler : next
+NumericHandler o--> "1" SignalHandler : next
 
 @enduml

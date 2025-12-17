@@ -1,0 +1,27 @@
+\chapter{Introduction}
+
+The contemporary healthcare field is facing significant challenges,  driven by the phenomena of overcrowding in emergency departments, medical shortages, and increasing pressure on triage systems. At present, these prioritization tools often rely on manual protocols and subjective opinions. These particular conditions create a fragile environment that can lead to potential diagnostic errors, substantial variability in decision-making processes, and high rates of burnout among healthcare professionals.
+
+To address these critical issues, the proposed EarlyCare Gateway project aims to develop a Clinical Decision Support System (CDSS), designed to assist medical staff in the preliminary diagnosis and triage optimization process. It is important to emphasize that this system is designed only for professional use, as it is intended to assist doctors in order to prevent the risks associated with self-diagnosis and ensuring that the final decision always depends on a human operator.
+
+\section{Context and Motivation}
+While the clinical objective is clear, the engineering challenge lies in creating a solution that is robust, scalable, and capable of adapting to the rapid evolution of Artificial Intelligence.
+
+The adoption of automated decision-making techniques in medicine is often hindered by skepticism regarding the black-box nature of algorithms. Currently, the adoption of automatic decision-making techniques in the medical field is still limited, often slowed down by ethical considerations and strict regulations. The EarlyCare Gateway aims to explore a technological solution that addresses these challenges.
+
+The primary goal is to support the preliminary diagnosis of patient pathologies to optimize the triage process. From an architectural perspective, the solution is based on a containerized microservices architecture. This approach ensures that components are independent yet cooperative, improving system maintainability and scalability.
+
+\section{Document Structure}
+This document details the design, development, and implementation of the system, organized as follows:
+
+The State of the Art chapter analyzes the current healthcare context, focusing in particular on the limitations of manual triage protocols, such as the Manchester Triage System. It explores the application of Artificial Intelligence in medicine, comparing the effectiveness of traditional Machine Learning approaches with the emerging capabilities of Large Language Models and Deep Learning. Special attention is given to Explainable AI techniques, which are crucial for transparency in clinical decision support systems.
+
+The Requirements and Architecture chapter provides a description of Functional Requirements and Non-Functional Requirements. This chapter presents the containerized microservices architecture designed to meet these constraints, illustrating its decomposition into isolated components. Furthermore, the implemented Design Patterns are analyzed, and the corresponding UML diagrams and RESTful API contracts are described to clarify the interaction between services.
+
+The AI Solutions and Explainability chapter examines the core of the project. It describes the Swappable AI logic and the specific models integrated to analyse text, signals, images, and structured data.
+
+In the Development and Deployment chapter the technology stack and development tools are presented. Agile Kanban principles are applied during development, while containerization practices are used for deployment. This chapter also covers code organization and the implementation of the main classes that realize the architectural patterns defined in the previous sections.
+
+The Testing and Results chapter reports the analysis of the integration tests performed and the evaluation metrics of the implemented AI models.
+
+Finally, the Conclusion chapter summarizes the milestones achieved with the development of EarlyCare Gateway, highlighting how the solution addresses modern triage challenges by reducing the cognitive load on medical staff. The chapter also outlines potential future developments.

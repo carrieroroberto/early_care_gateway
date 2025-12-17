@@ -3,13 +3,13 @@
 interface IReportRepository {
   + save(report: Report) : Report
   + findByDoctor(doctorId) : list<Report>
-  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientCf) : list<Report>
 }
 class ReportRepositoryImpl implements IReportRepository {
   - dbConnection
   + save(report: Report) : Report
   + findByDoctor(doctorId) : list<Report>
-  + findByDoctorAndPatient(doctorId, patientId) : list<Report>
+  + findByDoctorAndPatient(doctorId, patientCf) : list<Report>
 }
 
 interface IAuditNotifier {
@@ -27,30 +27,31 @@ interface IProcessedDataClient {
 interface IAnalysisStrategy {
   + execute(data: ProcessedData) : Report
 }
-class ClassicMLStrategy implements IAnalysisStrategy {
+class TextStrategy implements IAnalysisStrategy {
   + execute(data: ProcessedData) : Report
 }
-class MultimodalStrategy implements IAnalysisStrategy {
+class ImageStrategy implements IAnalysisStrategy {
   + execute(data: ProcessedData) : Report
 }
-class StrategyFactory {
-  + getStrategy(mode: String) : IAnalysisStrategy
+class NumericStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
+}
+class SignalStrategy implements IAnalysisStrategy {
+  + execute(data: ProcessedData) : Report
 }
 
 class ExplainableAIService {
   - reportRepo: IReportRepository
   - auditNotifier: IAuditNotifier
   - dataClient: IProcessedDataClient
-  - strategyFactory: StrategyFactory
 
-  + performAnalysis(dataId: String, mode: String) : DiagnosisReport
+  + performAnalysis(dataId: String, strategy: String) : DiagnosisReport
   + getReports(doctorId: String, patientId: String) : list<ReportSummary>
 }
 
 ExplainableAIService o-- "1" IReportRepository
 ExplainableAIService o-- "1" IAuditNotifier
 ExplainableAIService o-- "1" IProcessedDataClient
-ExplainableAIService o-- "1" StrategyFactory
 ExplainableAIService ..> IAnalysisStrategy : uses
 
 @enduml
