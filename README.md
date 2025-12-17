@@ -9,9 +9,9 @@
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-A Microservice Architecture for AI Clinical Decision Support.
+A Microservice Architecture for AI Clinical Decision Support with Explainability.
 
-EarlyCare Gateway is a web system designed to optimize triage and preliminary diagnosis workflows. Built on a microservices architecture, the system analyzes multimodal data (text, images, signals, and structured records) providing predictions supported by Explainable AI (XAI) insights.
+EarlyCare Gateway is a Web System designed to optimize preliminary diagnosis workflows. Built on a Microservices Architecture, the system analyzes Multimodal Data (Text, Images, Signals, and Structured records) providing predictions supported by Explainable AI (XAI) insights.
 
 *Note: This system is designed exclusively for professional use by authorized medical personnel to prevent risks associated with self-diagnosis.*
 
