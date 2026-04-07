@@ -18,12 +18,6 @@ EarlyCare Gateway is a Web System designed to optimize preliminary diagnosis wor
 https://github.com/user-attachments/assets/b14fa7f4-014d-4f42-b8f3-1a18f1d67461
 
 ---
-
-## Table of Contents
-- [System Overview](#systemoverview)
-- [Getting Started](#gettingstarted)
-
----
 ## System Overview
 
 <div align="center">
