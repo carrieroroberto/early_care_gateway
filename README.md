@@ -15,6 +15,8 @@ EarlyCare Gateway is a Web System designed to optimize preliminary diagnosis wor
 
 *Note: This system is designed exclusively for professional use by authorized medical personnel to prevent risks associated with self-diagnosis.*
 
+https://github.com/user-attachments/assets/b14fa7f4-014d-4f42-b8f3-1a18f1d67461
+
 ---
 
 ## Table of Contents
